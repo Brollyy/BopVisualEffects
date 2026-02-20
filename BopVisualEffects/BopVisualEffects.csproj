@@ -13,13 +13,14 @@
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3277</MSBuildWarningsAsMessages>
     <NuGetAudit>false</NuGetAudit>
     <RestoreSources>
       https://api.nuget.org/v3/index.json;
       https://nuget.bepinex.dev/v3/index.json
     </RestoreSources>
     <AssemblyName>BopVisualEffects</AssemblyName>
-    <Product>Bop Visual Effects</Product>
+    <Product>BopVisualEffects</Product>
     <Version>0.1.0</Version>
     <RootNamespace>BopVisualEffects</RootNamespace>
     <Description>Bits &amp; Bops mod that adds additional visual effects for the in-game editor.</Description>
@@ -46,7 +47,7 @@
       <Private>false</Private>
     </Reference>
     <Reference Include="@(GameLibrary)" Condition="'$(SkipGameReferences)' != 'true' and '$(UnityManagedDir)' != ''">
-      <HintPath>$(UnityManagedDir)/%(GameLibrary.Identity).dll</HintPath>
+      <HintPath>$(UnityManagedDir)/%(Identity).dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>
