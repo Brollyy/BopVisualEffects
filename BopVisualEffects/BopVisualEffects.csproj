@@ -22,7 +22,7 @@
     <Product>Bop Visual Effects</Product>
     <Version>0.1.0</Version>
     <RootNamespace>BopVisualEffects</RootNamespace>
-    <Description>Adds additional visual effects for the Bits &amp; Bops in-game editor.</Description>
+    <Description>Bits &amp; Bops mod that adds additional visual effects for the in-game editor.</Description>
   </PropertyGroup>
 
   <PropertyGroup>
