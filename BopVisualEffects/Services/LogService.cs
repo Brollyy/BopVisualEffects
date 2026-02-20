@@ -148,7 +148,7 @@ public sealed class LogService
 			default:
 				_logSource.LogInfo(formattedMessage);
 				break;
-			}
+		}
 	}
 
 	/// <summary>

@@ -12,7 +12,7 @@ if ! command -v dotnet >/dev/null 2>&1; then
 fi
 
 echo "Running dotnet format..."
-dotnet format BopVisualEffects.sln --verbosity minimal
+dotnet format BopVisualEffects.sln --verbosity minimal --exclude BopVisualEffects/obj
 
 git add -u
 

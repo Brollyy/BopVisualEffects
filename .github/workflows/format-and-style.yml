@@ -22,7 +22,7 @@ jobs:
         run: dotnet restore BopVisualEffects.sln
 
       - name: Verify whitespace formatting
-        run: dotnet format whitespace BopVisualEffects.sln --verify-no-changes --verbosity minimal
+        run: dotnet format whitespace BopVisualEffects.sln --verify-no-changes --verbosity minimal --exclude BopVisualEffects/obj
 
   code-style:
     runs-on: ubuntu-latest
@@ -40,7 +40,7 @@ jobs:
         run: dotnet restore BopVisualEffects.sln
 
       - name: Verify code style rules
-        run: dotnet format style BopVisualEffects.sln --verify-no-changes --verbosity minimal
+        run: dotnet format style BopVisualEffects.sln --verify-no-changes --verbosity minimal --exclude BopVisualEffects/obj
 
   analyzers:
     runs-on: ubuntu-latest
@@ -58,4 +58,4 @@ jobs:
         run: dotnet restore BopVisualEffects.sln
 
       - name: Verify analyzer rules
-        run: dotnet format analyzers BopVisualEffects.sln --verify-no-changes --verbosity minimal
+        run: dotnet format analyzers BopVisualEffects.sln --verify-no-changes --verbosity minimal --exclude BopVisualEffects/obj
