@@ -1,0 +1,47 @@
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE - JetBrains Rider / ReSharper
+.idea/
+*.iml
+_ReSharper.Caches/
+*.DotSettings.user
+*.sln.DotSettings.user
+
+# IDE - Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# IDE - VS Code
+.vscode/
+
+# Build output
+bin/
+obj/
+packages/
+artifacts/
+
+# .NET / NuGet
+*.nupkg
+*.snupkg
+project.lock.json
+project.fragment.lock.json
+
+# Test / coverage
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+coverage/
+
+# Logs
+*.log
+logs/
+
+# Local project config
+BopVisualEffects/BopVisualEffects.user.props

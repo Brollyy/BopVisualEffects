@@ -1,0 +1,5 @@
+<Project>
+  <PropertyGroup>
+    <GameRoot>steam_installation_folder/Steam/steamapps/common/Bits &amp; Bops</GameRoot>
+  </PropertyGroup>
+</Project>

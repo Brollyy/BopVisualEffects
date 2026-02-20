@@ -1,0 +1,30 @@
+name: Format And Style
+
+on:
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  format-and-style:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Restore
+        run: dotnet restore BopVisualEffects.sln
+
+      - name: Verify whitespace formatting
+        run: dotnet format whitespace BopVisualEffects.sln --verify-no-changes --verbosity minimal
+
+      - name: Verify code style rules
+        run: dotnet format style BopVisualEffects.sln --verify-no-changes --verbosity minimal
+
+      - name: Verify analyzer rules
+        run: dotnet format analyzers BopVisualEffects.sln --verify-no-changes --verbosity minimal

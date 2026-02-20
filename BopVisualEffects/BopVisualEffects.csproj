@@ -1,0 +1,72 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="BopVisualEffects.user.props" Condition="Exists('BopVisualEffects.user.props')"/>
+  <Import Project="GameDependencies.props" Condition="Exists('GameDependencies.props')"/>
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Deterministic>true</Deterministic>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <NuGetAudit>false</NuGetAudit>
+    <RestoreSources>
+      https://api.nuget.org/v3/index.json;
+      https://nuget.bepinex.dev/v3/index.json
+    </RestoreSources>
+    <AssemblyName>BopVisualEffects</AssemblyName>
+    <Product>Bop Visual Effects</Product>
+    <Version>0.1.0</Version>
+    <RootNamespace>BopVisualEffects</RootNamespace>
+    <Description>Adds additional visual effects for the Bits &amp; Bops in-game editor.</Description>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <SkipGameReferences Condition="'$(SkipGameReferences)' == '' and '$(GITHUB_ACTIONS)' == 'true'">true</SkipGameReferences>
+    <GameRoot Condition="'$(GameRoot)' == '' and '$(BOP_GAME_ROOT)' != ''">$(BOP_GAME_ROOT)</GameRoot>
+    <BepInExRoot Condition="'$(GameRoot)' != ''">$(GameRoot)/BepInEx</BepInExRoot>
+    <BepInExPluginsDir Condition="'$(GameRoot)' != ''">$(GameRoot)/BepInEx/plugins</BepInExPluginsDir>
+    <UnityManagedDir Condition="'$(GameRoot)' != ''">$(GameRoot)/Bits &amp; Bops_Data/Managed</UnityManagedDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BepInEx.Analyzers" Version="1.*" PrivateAssets="all"/>
+    <PackageReference Include="BepInEx.Core" Version="5.*"/>
+    <PackageReference Include="BepInEx.PluginInfoProps" Version="2.*"/>
+    <Reference Include="UnityEngine" Condition="'$(SkipGameReferences)' != 'true' and Exists('$(UnityManagedDir)/UnityEngine.dll')">
+      <HintPath>$(UnityManagedDir)/UnityEngine.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule" Condition="'$(SkipGameReferences)' != 'true' and Exists('$(UnityManagedDir)/UnityEngine.CoreModule.dll')">
+      <HintPath>$(UnityManagedDir)/UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="@(GameLibrary)" Condition="'$(SkipGameReferences)' != 'true' and '$(UnityManagedDir)' != ''">
+      <HintPath>$(UnityManagedDir)/%(GameLibrary.Identity).dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <Target Name="ValidateTemplateDependencies" BeforeTargets="ResolveReferences" Condition="'$(SkipGameReferences)' != 'true'">
+    <ItemGroup>
+      <MissingGameLibrary Include="@(GameLibrary)"
+                          Condition="'$(UnityManagedDir)' != '' and !Exists('$(UnityManagedDir)/%(Identity).dll')"/>
+    </ItemGroup>
+
+    <Error Condition="!Exists('$(UnityManagedDir)')"
+           Text="Unity managed directory not found. Set GameRoot in BopVisualEffects.user.props (or BOP_GAME_ROOT env var)."/>
+    <Error Condition="'@(MissingGameLibrary)' != ''"
+           Text="Missing game managed assembly references: @(MissingGameLibrary, ', '). Update BopVisualEffects/GameDependencies.props or UnityManagedDir."/>
+  </Target>
+
+  <Target Name="CopyPluginToBepInEx"
+          AfterTargets="PostBuildEvent"
+          Condition="'$(SkipGameReferences)' != 'true' and '$(BepInExPluginsDir)' != '' and Exists('$(BepInExPluginsDir)')">
+    <Message Importance="High" Text="Copying $(TargetFileName) to $(BepInExPluginsDir)"/>
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(BepInExPluginsDir)" SkipUnchangedFiles="true"/>
+  </Target>
+</Project>
