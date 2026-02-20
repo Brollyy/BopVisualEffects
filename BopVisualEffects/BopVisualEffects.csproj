@@ -3,7 +3,7 @@
   <Import Project="GameDependencies.props" Condition="Exists('GameDependencies.props')"/>
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>net472</TargetFramework>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
@@ -38,6 +38,7 @@
     <PackageReference Include="BepInEx.Analyzers" Version="1.*" PrivateAssets="all"/>
     <PackageReference Include="BepInEx.Core" Version="5.*"/>
     <PackageReference Include="BepInEx.PluginInfoProps" Version="2.*"/>
+    <PackageReference Include="Unity3D.UnityEngine" Version="2018.3.5.1" IncludeAssets="compile" Condition="'$(SkipGameReferences)' == 'true'"/>
     <Reference Include="UnityEngine" Condition="'$(SkipGameReferences)' != 'true' and Exists('$(UnityManagedDir)/UnityEngine.dll')">
       <HintPath>$(UnityManagedDir)/UnityEngine.dll</HintPath>
       <Private>false</Private>

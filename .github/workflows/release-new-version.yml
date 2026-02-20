@@ -1,0 +1,157 @@
+name: Release New Version
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "New version (SemVer, e.g. 0.2.0)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  deployments: write
+
+jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      commit_sha: ${{ steps.meta.outputs.commit_sha }}
+
+    steps:
+      - name: Checkout master
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: master
+
+      - name: Validate requested version
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+        run: |
+          set -euo pipefail
+
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-+][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid version: $VERSION. Expected SemVer like 0.2.0" >&2
+            exit 1
+          fi
+
+          if git ls-remote --tags --exit-code origin "refs/tags/v$VERSION" >/dev/null; then
+            echo "Tag v$VERSION already exists on origin." >&2
+            exit 1
+          fi
+
+      - name: Update csproj version
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+        run: |
+          set -euo pipefail
+          sed -i -E "s#<Version>[^<]+</Version>#<Version>${VERSION}</Version>#" BopVisualEffects/BopVisualEffects.csproj
+
+      - name: Commit and push version bump
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add BopVisualEffects/BopVisualEffects.csproj
+          if git diff --cached --quiet; then
+            echo "No version change detected." >&2
+            exit 1
+          fi
+
+          git commit -m "chore: bump version to v${VERSION}"
+          git push origin HEAD:master
+
+      - name: Export metadata
+        id: meta
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+        run: |
+          set -euo pipefail
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "commit_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  deploy-release-environment:
+    runs-on: ubuntu-latest
+    needs: bump-version
+    environment: release
+
+    steps:
+      - name: Checkout bumped commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.bump-version.outputs.commit_sha }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Restore
+        run: dotnet restore BopVisualEffects.sln
+
+      - name: Build Release
+        run: dotnet build BopVisualEffects.sln -c Release -p:SkipGameReferences=true --no-restore
+
+      - name: Package release artifact
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          cp BopVisualEffects/bin/Release/net472/BopVisualEffects.dll dist/
+
+          if [ -f BopVisualEffects/bin/Release/net472/BopVisualEffects.pdb ]; then
+            cp BopVisualEffects/bin/Release/net472/BopVisualEffects.pdb dist/
+          fi
+
+          echo "${{ needs.bump-version.outputs.version }}" > dist/VERSION.txt
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BopVisualEffects-v${{ needs.bump-version.outputs.version }}
+          path: dist/
+          if-no-files-found: error
+
+  tag-and-publish-release:
+    runs-on: ubuntu-latest
+    needs:
+      - bump-version
+      - deploy-release-environment
+
+    steps:
+      - name: Checkout master
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: master
+
+      - name: Download built artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: BopVisualEffects-v${{ needs.bump-version.outputs.version }}
+          path: dist
+
+      - name: Create and push tag
+        env:
+          VERSION: ${{ needs.bump-version.outputs.version }}
+          COMMIT_SHA: ${{ needs.bump-version.outputs.commit_sha }}
+        run: |
+          set -euo pipefail
+          git tag "v${VERSION}" "${COMMIT_SHA}"
+          git push origin "v${VERSION}"
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.bump-version.outputs.version }}
+          name: v${{ needs.bump-version.outputs.version }}
+          files: dist/*
+          generate_release_notes: true
+          make_latest: true
+          
