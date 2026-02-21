@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using BopVisualEffects.Core;
+using BopVisualEffects.Effects.Flip;
 using UnityEngine;
 
 namespace BopVisualEffects.Effects.VerticalFlip;
@@ -55,7 +56,7 @@ public sealed class VerticalFlipEffect : IVisualEffectDefinition
 		private float _endBeat;
 		private MixtapeLoaderCustom? _loader;
 		private JukeboxScript? _jukebox;
-		private VerticalFlipOverlay? _overlay;
+		private Camera? _camera;
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
@@ -65,7 +66,7 @@ public sealed class VerticalFlipEffect : IVisualEffectDefinition
 			_loader = loader;
 			_jukebox = jukebox;
 			_endBeat = endBeat;
-			InitializeOverlay();
+			InitializeFlip();
 		}
 
 		/// <summary>
@@ -73,7 +74,7 @@ public sealed class VerticalFlipEffect : IVisualEffectDefinition
 		/// </summary>
 		public void Stop()
 		{
-			RemoveOverlay();
+			RemoveFlip();
 			Destroy(this);
 		}
 
@@ -87,7 +88,7 @@ public sealed class VerticalFlipEffect : IVisualEffectDefinition
 
 			if (!_initialized)
 			{
-				InitializeOverlay();
+				InitializeFlip();
 				if (!_initialized)
 					return;
 			}
@@ -102,59 +103,28 @@ public sealed class VerticalFlipEffect : IVisualEffectDefinition
 
 		private void OnDisable()
 		{
-			RemoveOverlay();
+			RemoveFlip();
 		}
 
-		private void InitializeOverlay()
+		private void InitializeFlip()
 		{
 			Camera? camera = EffectRuntimeController.ResolveEffectCamera(_loader);
 			if (camera is null)
 				return;
 
-			_overlay = camera.gameObject.AddComponent<VerticalFlipOverlay>();
+			_camera = camera;
+			CameraFlipService.AddVerticalFlip(camera);
 			_initialized = true;
 		}
 
-		private void RemoveOverlay()
-		{
-			if (_overlay != null)
-				Destroy(_overlay);
-
-			_overlay = null;
-		}
-	}
-
-	/// <summary>
-	/// Mirrors the camera projection vertically by negating the Y axis just before rendering
-	/// and restoring it after, so that concurrent projection-modifying effects (e.g. zoom) are
-	/// always picked up from the camera's current natural projection each frame.
-	/// Must be attached to a Camera's GameObject.
-	/// </summary>
-	private sealed class VerticalFlipOverlay : MonoBehaviour
-	{
-		private Camera? _camera;
-
-		private void Awake()
-		{
-			_camera = GetComponent<Camera>();
-		}
-
-		// Fires just before the camera culls the scene — apply flip to current natural projection.
-		private void OnPreCull()
+		private void RemoveFlip()
 		{
 			if (_camera is null)
 				return;
 
-			// Reset so Unity recomputes projection from current fieldOfView/orthographicSize,
-			// picking up any changes made this frame by other effects (e.g. ZoomIn/ZoomOut).
-			_camera.ResetProjectionMatrix();
-			_camera.projectionMatrix = Matrix4x4.Scale(new Vector3(1f, -1f, 1f)) * _camera.projectionMatrix;
-		}
-
-		// Fires after the camera finishes rendering — restore natural projection for next frame.
-		private void OnPostRender()
-		{
-			_camera?.ResetProjectionMatrix();
+			CameraFlipService.RemoveVerticalFlip(_camera);
+			_camera = null;
 		}
 	}
 }
+
