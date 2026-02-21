@@ -118,13 +118,16 @@ public sealed class ZoomPulseEffect : IVisualEffectDefinition
 
 			var zoomDelta = _intensity * envelope;
 
+			// Clamp zoom factor so the camera size/FOV never reaches zero or negative values.
+			var zoomFactor = Mathf.Clamp(1f - zoomDelta, 0.01f, 1f);
+
 			if (_isOrthographic)
 			{
-				_camera!.orthographicSize = _initialOrthographicSize * (1f - zoomDelta);
+				_camera!.orthographicSize = _initialOrthographicSize * zoomFactor;
 			}
 			else
 			{
-				_camera!.fieldOfView = _initialFieldOfView * (1f - zoomDelta);
+				_camera!.fieldOfView = _initialFieldOfView * zoomFactor;
 			}
 		}
 

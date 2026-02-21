@@ -77,7 +77,7 @@ public sealed class ScanlinesEffect : IVisualEffectDefinition
 			_startBeat = startBeat;
 			_endBeat = endBeat;
 			_alpha = Mathf.Clamp01(alpha);
-			_count = Mathf.Max(4, Mathf.RoundToInt(count));
+			_count = Mathf.Clamp(Mathf.RoundToInt(count), 4, 2000);
 			InitializeOverlay();
 		}
 

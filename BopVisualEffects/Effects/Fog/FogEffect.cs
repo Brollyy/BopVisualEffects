@@ -59,6 +59,53 @@ public sealed class FogEffect : IVisualEffectDefinition
 		}
 	}
 
+	/// <summary>
+	/// Manages shared RenderSettings fog state across potentially overlapping FogRunner instances.
+	/// Saves the pre-effect fog state when the first runner activates and restores it only when the last runner deactivates.
+	/// </summary>
+	private static class FogStateController
+	{
+		private static int _activeCount;
+		private static bool _savedFog;
+		private static Color _savedFogColor;
+		private static float _savedFogDensity;
+		private static FogMode _savedFogMode;
+
+		/// <summary>
+		/// Called by a FogRunner on activation. Saves pre-effect fog state on the first activation.
+		/// </summary>
+		public static void Activate()
+		{
+			if (_activeCount == 0)
+			{
+				_savedFog = RenderSettings.fog;
+				_savedFogColor = RenderSettings.fogColor;
+				_savedFogDensity = RenderSettings.fogDensity;
+				_savedFogMode = RenderSettings.fogMode;
+			}
+
+			_activeCount++;
+		}
+
+		/// <summary>
+		/// Called by a FogRunner on deactivation. Restores pre-effect fog state when the last runner deactivates.
+		/// </summary>
+		public static void Deactivate()
+		{
+			if (_activeCount <= 0)
+				return;
+
+			_activeCount--;
+			if (_activeCount == 0)
+			{
+				RenderSettings.fog = _savedFog;
+				RenderSettings.fogColor = _savedFogColor;
+				RenderSettings.fogDensity = _savedFogDensity;
+				RenderSettings.fogMode = _savedFogMode;
+			}
+		}
+	}
+
 	private sealed class FogRunner : MonoBehaviour
 	{
 		private float _r;
@@ -68,12 +115,7 @@ public sealed class FogEffect : IVisualEffectDefinition
 		private float _startBeat;
 		private float _endBeat;
 		private JukeboxScript? _jukebox;
-
-		// Saved original fog state.
-		private bool _originalFog;
-		private Color _originalFogColor;
-		private float _originalFogDensity;
-		private FogMode _originalFogMode;
+		private bool _activated;
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
@@ -88,11 +130,9 @@ public sealed class FogEffect : IVisualEffectDefinition
 			_b = Mathf.Clamp01(b);
 			_maxDensity = Mathf.Max(0f, density);
 
-			// Save original fog settings and enable fog.
-			_originalFog = RenderSettings.fog;
-			_originalFogColor = RenderSettings.fogColor;
-			_originalFogDensity = RenderSettings.fogDensity;
-			_originalFogMode = RenderSettings.fogMode;
+			// Register with the shared controller before touching RenderSettings.
+			FogStateController.Activate();
+			_activated = true;
 
 			RenderSettings.fog = true;
 			RenderSettings.fogMode = FogMode.ExponentialSquared;
@@ -105,7 +145,7 @@ public sealed class FogEffect : IVisualEffectDefinition
 		/// </summary>
 		public void Stop()
 		{
-			RestoreFog();
+			ReleaseFog();
 			Destroy(this);
 		}
 
@@ -139,15 +179,16 @@ public sealed class FogEffect : IVisualEffectDefinition
 
 		private void OnDisable()
 		{
-			RestoreFog();
+			ReleaseFog();
 		}
 
-		private void RestoreFog()
+		private void ReleaseFog()
 		{
-			RenderSettings.fog = _originalFog;
-			RenderSettings.fogColor = _originalFogColor;
-			RenderSettings.fogDensity = _originalFogDensity;
-			RenderSettings.fogMode = _originalFogMode;
+			if (!_activated)
+				return;
+
+			_activated = false;
+			FogStateController.Deactivate();
 		}
 	}
 }

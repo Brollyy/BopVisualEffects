@@ -162,6 +162,9 @@ public sealed class ScreenNoiseEffect : IVisualEffectDefinition
 		private float _alpha;
 		private int _count;
 
+		// Local PRNG to avoid perturbing the global UnityEngine.Random state.
+		private readonly System.Random _rng = new System.Random();
+
 		/// <summary>
 		/// Updates the overlay parameters.
 		/// </summary>
@@ -206,10 +209,10 @@ public sealed class ScreenNoiseEffect : IVisualEffectDefinition
 			GL.Begin(GL.QUADS);
 			for (var i = 0; i < _count; i++)
 			{
-				var x = Random.value;
-				var y = Random.value;
-				var brightness = Random.value;
-				var a = Random.value * _alpha;
+				var x = (float)_rng.NextDouble();
+				var y = (float)_rng.NextDouble();
+				var brightness = (float)_rng.NextDouble();
+				var a = (float)_rng.NextDouble() * _alpha;
 
 				GL.Color(new Color(brightness, brightness, brightness, a));
 				GL.Vertex3(x, y, 0f);
