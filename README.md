@@ -6,7 +6,7 @@ BepInEx 5.x mod for Bits & Bops that adds additional visual effects for the in-g
 
 See [this document](docs/effects/README.md) for the full list of effects this mod enables.
 
-# Contributing
+## Contributing
 
 ## Local setup
 
@@ -25,7 +25,7 @@ If `BepInExPluginsDir` exists, build output is copied there automatically.
 1. Create a class in `BopVisualEffects/Effects/<EffectName>/` that implements `IVisualEffectDefinition`.
 2. Implement `CreateTemplate` so the effect appears in the editor template list.
 3. Add a dedicated runtime runner `MonoBehaviour` for the effect (in the same file or a sibling file).
-4. Implement `TrySchedule` to read entity properties and spawn your runner through `EffectContext.Runtime.SpawnRunner<T>(...)`.
+4. Implement `TrySchedule` to read entity properties and spawn your runner through `EffectRuntimeController.Instance.SpawnRunner<T>(...)`.
 5. Register the effect once in `EffectDefinitionRegistry.Initialize(...)` using `Register(new YourEffect())`.
 6. Add media for documentation:
    - `docs/effects/<effect-id>/preview.gif`

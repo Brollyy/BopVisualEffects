@@ -10,7 +10,7 @@ namespace BopVisualEffects.Effects.CameraShake;
 public sealed class CameraShakeEffect : IVisualEffectDefinition
 {
 	/// <inheritdoc />
-	public string Id => "camera shake";
+	public string Id => "camera-shake";
 
 	/// <inheritdoc />
 	public string DisplayName => "Camera Shake";
