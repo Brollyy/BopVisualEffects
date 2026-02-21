@@ -55,9 +55,7 @@ public sealed class HorizontalFlipEffect : IVisualEffectDefinition
 		private float _endBeat;
 		private MixtapeLoaderCustom? _loader;
 		private JukeboxScript? _jukebox;
-		private Camera? _camera;
-		private Matrix4x4 _originalProjection;
-		private Matrix4x4 _flippedProjection;
+		private HorizontalFlipOverlay? _overlay;
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
@@ -67,7 +65,7 @@ public sealed class HorizontalFlipEffect : IVisualEffectDefinition
 			_loader = loader;
 			_jukebox = jukebox;
 			_endBeat = endBeat;
-			InitializeTargetCamera();
+			InitializeOverlay();
 		}
 
 		/// <summary>
@@ -75,7 +73,7 @@ public sealed class HorizontalFlipEffect : IVisualEffectDefinition
 		/// </summary>
 		public void Stop()
 		{
-			ResetCamera();
+			RemoveOverlay();
 			Destroy(this);
 		}
 
@@ -89,7 +87,7 @@ public sealed class HorizontalFlipEffect : IVisualEffectDefinition
 
 			if (!_initialized)
 			{
-				InitializeTargetCamera();
+				InitializeOverlay();
 				if (!_initialized)
 					return;
 			}
@@ -100,37 +98,63 @@ public sealed class HorizontalFlipEffect : IVisualEffectDefinition
 				Stop();
 				return;
 			}
-
-			_camera!.projectionMatrix = _flippedProjection;
 		}
 
 		private void OnDisable()
 		{
-			ResetCamera();
+			RemoveOverlay();
 		}
 
-		private void InitializeTargetCamera()
+		private void InitializeOverlay()
 		{
 			Camera? camera = EffectRuntimeController.ResolveEffectCamera(_loader);
 			if (camera is null)
 				return;
 
-			_camera = camera;
-			// Reset to the camera's natural projection so we always flip from a clean base,
-			// regardless of whether another projection-modifying effect is currently active.
-			camera.ResetProjectionMatrix();
-			_originalProjection = camera.projectionMatrix;
-			// Negate the X axis of the projection matrix to mirror the screen horizontally.
-			_flippedProjection = Matrix4x4.Scale(new Vector3(-1f, 1f, 1f)) * _originalProjection;
+			_overlay = camera.gameObject.AddComponent<HorizontalFlipOverlay>();
 			_initialized = true;
 		}
 
-		private void ResetCamera()
+		private void RemoveOverlay()
+		{
+			if (_overlay != null)
+				Destroy(_overlay);
+
+			_overlay = null;
+		}
+	}
+
+	/// <summary>
+	/// Mirrors the camera projection horizontally by negating the X axis just before rendering
+	/// and restoring it after, so that concurrent projection-modifying effects (e.g. zoom) are
+	/// always picked up from the camera's current natural projection each frame.
+	/// Must be attached to a Camera's GameObject.
+	/// </summary>
+	private sealed class HorizontalFlipOverlay : MonoBehaviour
+	{
+		private Camera? _camera;
+
+		private void Awake()
+		{
+			_camera = GetComponent<Camera>();
+		}
+
+		// Fires just before the camera culls the scene — apply flip to current natural projection.
+		private void OnPreCull()
 		{
 			if (_camera is null)
 				return;
 
-			_camera.projectionMatrix = _originalProjection;
+			// Reset so Unity recomputes projection from current fieldOfView/orthographicSize,
+			// picking up any changes made this frame by other effects (e.g. ZoomIn/ZoomOut).
+			_camera.ResetProjectionMatrix();
+			_camera.projectionMatrix = Matrix4x4.Scale(new Vector3(-1f, 1f, 1f)) * _camera.projectionMatrix;
+		}
+
+		// Fires after the camera finishes rendering — restore natural projection for next frame.
+		private void OnPostRender()
+		{
+			_camera?.ResetProjectionMatrix();
 		}
 	}
 }
