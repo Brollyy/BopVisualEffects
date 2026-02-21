@@ -43,7 +43,7 @@ public sealed class LetterboxEffect : IVisualEffectDefinition
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
 
-		loader.scheduler.Schedule(startBeat, SpawnAction);
+		loader.scheduler.Schedule(startBeat, (System.Action?)SpawnAction);
 		log.Debug($"Scheduled '{DisplayName}' from beat {startBeat:0.###} to {endBeat:0.###}.");
 		return true;
 
@@ -118,7 +118,8 @@ public sealed class LetterboxEffect : IVisualEffectDefinition
 			else
 				envelope = 1f;
 
-			_overlay?.SetParams(_size * envelope);
+			if (_overlay)
+				_overlay.SetParams(_size * envelope);
 		}
 
 		private void OnDisable()
@@ -139,11 +140,12 @@ public sealed class LetterboxEffect : IVisualEffectDefinition
 
 		private void RemoveOverlay()
 		{
-			if (_overlay is not null)
+			if (_overlay)
 			{
 				Destroy(_overlay);
-				_overlay = null;
 			}
+
+			_overlay = null;
 		}
 	}
 

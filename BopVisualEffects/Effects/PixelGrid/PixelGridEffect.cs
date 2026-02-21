@@ -44,14 +44,14 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
 
-		loader.scheduler.Schedule(startBeat, SpawnAction);
+		loader.scheduler.Schedule(startBeat, (System.Action?)SpawnAction);
 		log.Debug($"Scheduled '{DisplayName}' from beat {startBeat:0.###} to {endBeat:0.###}.");
 		return true;
 
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<PixelGridRunner>(runner =>
-			runner.Initialize(loader, loader.jukebox, startBeat, endBeat, pixelSize));
+				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, pixelSize));
 		}
 	}
 
@@ -121,7 +121,8 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 				envelope = 1f;
 
 			var currentBlockSize = Mathf.Max(1, Mathf.RoundToInt(Mathf.Lerp(1f, _pixelSize, envelope)));
-			_overlay?.SetBlockSize(currentBlockSize);
+			if (_overlay)
+				_overlay.SetBlockSize(currentBlockSize);
 		}
 
 		private void OnDisable()
@@ -142,11 +143,12 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 
 		private void RemoveOverlay()
 		{
-			if (_overlay is not null)
+			if (_overlay)
 			{
 				Destroy(_overlay);
-				_overlay = null;
 			}
+
+			_overlay = null;
 		}
 	}
 
@@ -176,17 +178,29 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 				return;
 			}
 
-			// Downsample to a low-resolution RT, then upsample with point filtering.
+			// Downsample to a low-resolution RT using the source descriptor to preserve
+			// format/HDR/sRGB settings, then upsample with point (nearest-neighbour) filtering.
 			var lowW = Mathf.Max(1, src.width / _blockSize);
 			var lowH = Mathf.Max(1, src.height / _blockSize);
 
-			var lowRes = RenderTexture.GetTemporary(lowW, lowH);
-			lowRes.filterMode = FilterMode.Point;
+			var descriptor = src.descriptor;
+			descriptor.width = lowW;
+			descriptor.height = lowH;
 
-			Graphics.Blit(src, lowRes);
-			Graphics.Blit(lowRes, dest);
+			RenderTexture? lowRes = null;
+			try
+			{
+				lowRes = RenderTexture.GetTemporary(descriptor);
+				lowRes.filterMode = FilterMode.Point;
 
-			RenderTexture.ReleaseTemporary(lowRes);
+				Graphics.Blit(src, lowRes);
+				Graphics.Blit(lowRes, dest);
+			}
+			finally
+			{
+				if (lowRes != null)
+					RenderTexture.ReleaseTemporary(lowRes);
+			}
 		}
 	}
 }

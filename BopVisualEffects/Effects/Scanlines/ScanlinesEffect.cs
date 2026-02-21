@@ -47,7 +47,7 @@ public sealed class ScanlinesEffect : IVisualEffectDefinition
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
 
-		loader.scheduler.Schedule(startBeat, SpawnAction);
+		loader.scheduler.Schedule(startBeat, (System.Action?)SpawnAction);
 		log.Debug($"Scheduled '{DisplayName}' from beat {startBeat:0.###} to {endBeat:0.###}.");
 		return true;
 
@@ -126,7 +126,8 @@ public sealed class ScanlinesEffect : IVisualEffectDefinition
 			else
 				envelope = 1f;
 
-			_overlay?.SetParams(_alpha * envelope, _count, _scrollSpeed);
+			if (_overlay)
+				_overlay.SetParams(_alpha * envelope, _count, _scrollSpeed);
 		}
 
 		private void OnDisable()
@@ -147,11 +148,12 @@ public sealed class ScanlinesEffect : IVisualEffectDefinition
 
 		private void RemoveOverlay()
 		{
-			if (_overlay is not null)
+			if (_overlay)
 			{
 				Destroy(_overlay);
-				_overlay = null;
 			}
+
+			_overlay = null;
 		}
 	}
 
@@ -220,10 +222,32 @@ public sealed class ScanlinesEffect : IVisualEffectDefinition
 				var y0 = ((float)i / _count + scrollOffset) % 1f;
 				var y1 = y0 + lineH;
 				GL.Color(lineColor);
-				GL.Vertex3(0f, y0, 0f);
-				GL.Vertex3(0f, y1, 0f);
-				GL.Vertex3(1f, y1, 0f);
-				GL.Vertex3(1f, y0, 0f);
+
+				if (y1 <= 1f)
+				{
+					// Simple case: scan line is fully within the 0..1 vertical range.
+					GL.Vertex3(0f, y0, 0f);
+					GL.Vertex3(0f, y1, 0f);
+					GL.Vertex3(1f, y1, 0f);
+					GL.Vertex3(1f, y0, 0f);
+				}
+				else
+				{
+					// Wrap case: split into two quads around the top/bottom boundary.
+					var wrappedY1 = y1 - 1f;
+
+					// Top segment (y0 to screen top).
+					GL.Vertex3(0f, y0, 0f);
+					GL.Vertex3(0f, 1f, 0f);
+					GL.Vertex3(1f, 1f, 0f);
+					GL.Vertex3(1f, y0, 0f);
+
+					// Bottom segment (screen bottom to wrapped height).
+					GL.Vertex3(0f, 0f, 0f);
+					GL.Vertex3(0f, wrappedY1, 0f);
+					GL.Vertex3(1f, wrappedY1, 0f);
+					GL.Vertex3(1f, 0f, 0f);
+				}
 			}
 
 			GL.End();

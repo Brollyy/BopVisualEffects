@@ -29,12 +29,6 @@ Briefly tilts the camera on its Z-axis with a smooth swing arc. Great for expres
 - `angle`: Maximum tilt angle in degrees (positive = counter-clockwise).
 - `length` (event length in editor): How long the tilt lasts, in beats. This event is resizable in the timeline.
 
-**Preview media**
-
-![Camera Tilt preview](camera-tilt/preview.gif)
-
-[Watch video preview](camera-tilt/demo.mp4)
-
 ## Zoom Pulse
 
 **DisplayName:** `Zoom Pulse`
@@ -44,12 +38,6 @@ Rapidly zooms the camera in and then eases it back out, creating a punchy "push-
 **Properties**
 - `intensity`: How much to zoom in, expressed as a fraction of the camera's base size (e.g. `0.15` = 15% zoom).
 - `length` (event length in editor): How long the pulse lasts, in beats. This event is resizable in the timeline.
-
-**Preview media**
-
-![Zoom Pulse preview](zoom-pulse/preview.gif)
-
-[Watch video preview](zoom-pulse/demo.mp4)
 
 ## Zoom In
 
@@ -61,12 +49,6 @@ Eases the camera smoothly into a zoomed-in view, holds at the target level, then
 - `intensity`: How far to zoom in, as a fraction of the camera's base size (e.g. `0.2` = 20% closer). Clamped to `[0, 0.99]`.
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
 
-**Preview media**
-
-![Zoom In preview](zoom-in/preview.gif)
-
-[Watch video preview](zoom-in/demo.mp4)
-
 ## Zoom Out
 
 **DisplayName:** `Zoom Out`
@@ -76,12 +58,6 @@ Eases the camera smoothly out to a wider view, holds, then eases back in. Great 
 **Properties**
 - `intensity`: How far to zoom out, as a fraction of the camera's base size (e.g. `0.2` = 20% further out).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
-
-**Preview media**
-
-![Zoom Out preview](zoom-out/preview.gif)
-
-[Watch video preview](zoom-out/demo.mp4)
 
 ## Fog
 
@@ -95,12 +71,6 @@ Draws a ground fog gradient overlay — opaque at the bottom of the screen, fadi
 - `height`: Normalized screen height at which the fog fully fades to transparent (0–1; default `0.5`).
 - `length` (event length in editor): How long the fog lasts, in beats. This event is resizable in the timeline.
 
-**Preview media**
-
-![Fog preview](fog/preview.gif)
-
-[Watch video preview](fog/demo.mp4)
-
 ## Scanlines
 
 **DisplayName:** `Scanlines`
@@ -113,12 +83,6 @@ Draws horizontal CRT-style scan lines over the screen for a retro 8-bit aestheti
 - `scroll_speed`: Speed at which lines scroll upward, in cells per second (default `0` = static; negative = scroll downward).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
 
-**Preview media**
-
-![Scanlines preview](scanlines/preview.gif)
-
-[Watch video preview](scanlines/demo.mp4)
-
 ## Vignette
 
 **DisplayName:** `Vignette`
@@ -129,12 +93,6 @@ Darkens the screen edges with a smooth radial/elliptical gradient using a 32-seg
 - `alpha`: Darkness of the edge (0–1; default `0.7`).
 - `size`: How far the darkening extends inward as a fraction of screen half-height (0–0.5; default `0.1`).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
-
-**Preview media**
-
-![Vignette preview](vignette/preview.gif)
-
-[Watch video preview](vignette/demo.mp4)
 
 ## Color Tint
 
@@ -147,12 +105,6 @@ Applies a sustained full-screen color tint that fades in, holds, then fades out.
 - `alpha`: Maximum opacity (0–1; default `0.25`).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
 
-**Preview media**
-
-![Color Tint preview](color-tint/preview.gif)
-
-[Watch video preview](color-tint/demo.mp4)
-
 ## Letterbox
 
 **DisplayName:** `Letterbox`
@@ -163,12 +115,6 @@ Adds cinematic black bars at the top and bottom of the screen for a dramatic wid
 - `size`: Height of each bar as a normalized screen fraction (0–0.49; default `0.1`).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
 
-**Preview media**
-
-![Letterbox preview](letterbox/preview.gif)
-
-[Watch video preview](letterbox/demo.mp4)
-
 ## Screen Noise
 
 **DisplayName:** `Screen Noise`
@@ -178,14 +124,8 @@ Draws animated TV static noise specks over the screen for a glitchy atmosphere. 
 **Properties**
 - `alpha`: Maximum opacity of the noise specks (0–1; default `0.5`).
 - `count`: Number of noise specks drawn per frame (10–2000; default `400`).
-- `size`: Physical size of each speck in normalised screen coordinates (0.001–0.1; default `0.01`).
+- `size`: Physical size of each speck in normalised screen coordinates (0.005–0.1; default `0.01`).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
-
-**Preview media**
-
-![Screen Noise preview](screen-noise/preview.gif)
-
-[Watch video preview](screen-noise/demo.mp4)
 
 ## Pixel Grid
 
@@ -196,9 +136,3 @@ Pixelates the screen by downsampling the camera's rendered output to a low-resol
 **Properties**
 - `pixel_size`: Size of each pixel block in screen pixels (2–64; default `4`). Larger values produce a more pronounced 8-bit look.
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
-
-**Preview media**
-
-![Pixel Grid preview](pixel-grid/preview.gif)
-
-[Watch video preview](pixel-grid/demo.mp4)

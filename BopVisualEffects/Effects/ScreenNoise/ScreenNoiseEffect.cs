@@ -47,7 +47,7 @@ public sealed class ScreenNoiseEffect : IVisualEffectDefinition
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
 
-		loader.scheduler.Schedule(startBeat, SpawnAction);
+		loader.scheduler.Schedule(startBeat, (System.Action?)SpawnAction);
 		log.Debug($"Scheduled '{DisplayName}' from beat {startBeat:0.###} to {endBeat:0.###}.");
 		return true;
 
@@ -81,7 +81,7 @@ public sealed class ScreenNoiseEffect : IVisualEffectDefinition
 			_endBeat = endBeat;
 			_alpha = Mathf.Clamp01(alpha);
 			_count = Mathf.Clamp(Mathf.RoundToInt(count), 10, 2000);
-			_size = Mathf.Clamp(size, 0.001f, 0.1f);
+			_size = Mathf.Clamp(size, 0.005f, 0.1f);
 			InitializeOverlay();
 		}
 
@@ -126,7 +126,8 @@ public sealed class ScreenNoiseEffect : IVisualEffectDefinition
 			else
 				envelope = 1f;
 
-			_overlay?.SetParams(_alpha * envelope, _count, _size);
+			if (_overlay)
+				_overlay.SetParams(_alpha * envelope, _count, _size);
 		}
 
 		private void OnDisable()
@@ -147,11 +148,12 @@ public sealed class ScreenNoiseEffect : IVisualEffectDefinition
 
 		private void RemoveOverlay()
 		{
-			if (_overlay is not null)
+			if (_overlay)
 			{
 				Destroy(_overlay);
-				_overlay = null;
 			}
+
+			_overlay = null;
 		}
 	}
 

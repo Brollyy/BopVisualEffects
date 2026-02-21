@@ -51,14 +51,14 @@ public sealed class FogEffect : IVisualEffectDefinition
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
 
-		loader.scheduler.Schedule(startBeat, SpawnAction);
+		loader.scheduler.Schedule(startBeat, (System.Action?)SpawnAction);
 		log.Debug($"Scheduled '{DisplayName}' from beat {startBeat:0.###} to {endBeat:0.###}.");
 		return true;
 
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<FogRunner>(runner =>
-			runner.Initialize(loader, loader.jukebox, startBeat, endBeat, r, g, b, alpha, height));
+				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, r, g, b, alpha, height));
 		}
 	}
 
@@ -134,7 +134,8 @@ public sealed class FogEffect : IVisualEffectDefinition
 			else
 				envelope = 1f;
 
-			_overlay?.SetParams(_r, _g, _b, _maxAlpha * envelope, _height);
+			if (_overlay)
+				_overlay.SetParams(_r, _g, _b, _maxAlpha * envelope, _height);
 		}
 
 		private void OnDisable()
@@ -155,11 +156,12 @@ public sealed class FogEffect : IVisualEffectDefinition
 
 		private void RemoveOverlay()
 		{
-			if (_overlay is not null)
+			if (_overlay)
 			{
 				Destroy(_overlay);
-				_overlay = null;
 			}
+
+			_overlay = null;
 		}
 	}
 
