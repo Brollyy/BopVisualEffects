@@ -42,7 +42,7 @@ public sealed class ZoomPulseEffect : IVisualEffectDefinition
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
 
-		loader.scheduler.Schedule(startBeat, (System.Action?)SpawnAction);
+		loader.scheduler.Schedule(startBeat, SpawnAction);
 		log.Debug($"Scheduled '{DisplayName}' from beat {startBeat:0.###} to {endBeat:0.###}.");
 		return true;
 

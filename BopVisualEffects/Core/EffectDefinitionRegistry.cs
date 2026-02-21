@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using BopVisualEffects.Effects.CameraTilt;
 using BopVisualEffects.Effects.CameraShake;
+using BopVisualEffects.Effects.Fog;
+using BopVisualEffects.Effects.ScreenFlash;
 using BopVisualEffects.Effects.ZoomPulse;
 
 namespace BopVisualEffects.Core;
@@ -39,6 +41,8 @@ public sealed class EffectDefinitionRegistry
 		registry.Register(new CameraShakeEffect());
 		registry.Register(new CameraTiltEffect());
 		registry.Register(new ZoomPulseEffect());
+		registry.Register(new ScreenFlashEffect());
+		registry.Register(new FogEffect());
 		_instance = registry;
 	}
 
