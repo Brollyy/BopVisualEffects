@@ -10,7 +10,7 @@ See [this document](docs/effects/README.md) for the full list of effects this mo
 
 Each effect can be individually enabled or disabled in the BepInEx config file (`BepInEx/config/com.brollyy.bopvisualeffects.cfg`), under the `[Effects]` section.
 
-The config is generated automatically on first load. To disable an effect, set its entry to `false`:
+The config file is located in your Bits & Bops game folder. It is generated automatically on first load. To disable an effect, set its entry to `false`:
 
 ```ini
 [Effects]
@@ -21,24 +21,9 @@ The config is generated automatically on first load. To disable an effect, set i
 CameraShake.Enabled = false
 ```
 
-All available config keys:
+See the [effects documentation](docs/effects/README.md) for all available config keys.
 
-| Effect | Config Key |
-|---|---|
-| Camera Shake | `CameraShake.Enabled` |
-| Camera Tilt | `CameraTilt.Enabled` |
-| Color Tint | `ColorTint.Enabled` |
-| Fog | `Fog.Enabled` |
-| Letterbox | `Letterbox.Enabled` |
-| Pixel Grid | `PixelGrid.Enabled` |
-| Scanlines | `Scanlines.Enabled` |
-| Screen Noise | `ScreenNoise.Enabled` |
-| Vignette | `Vignette.Enabled` |
-| Zoom In | `ZoomIn.Enabled` |
-| Zoom Out | `ZoomOut.Enabled` |
-| Zoom Pulse | `ZoomPulse.Enabled` |
-
-Disabled effects are removed from the editor template picker and will not run during playback.
+Disabled effects are removed from the in-game editor and will not run during playback.
 
 ## Contributing
 
@@ -57,7 +42,7 @@ If `BepInExPluginsDir` exists, build output is copied there automatically.
 ### Adding a new effect
 
 1. Create a class in `BopVisualEffects/Effects/<EffectName>/` that implements `IVisualEffectDefinition`.
-2. Implement `Id` (lowercase, stable identifier), `DisplayName` (human-readable), `ConfigKey` (PascalCase, used for config file entries), and `Description`.
+2. Fill in `Id` (lowercase, with spaces), `DisplayName` (human-readable), `ConfigKey` (PascalCase, used for config file entries) and `Description`.
 3. Implement `CreateTemplate` so the effect appears in the editor template list.
 4. Add a dedicated runtime runner `MonoBehaviour` for the effect (in the same file or a sibling file).
 5. Implement `TrySchedule` to read entity properties and spawn your runner through `EffectRuntimeController.Instance.SpawnRunner<T>(...)`.
