@@ -160,3 +160,26 @@ Pixelates the screen by downsampling the camera's rendered output to a low-resol
 **Properties**
 - `pixel_size`: Size of each pixel block in screen pixels (2–64; default `4`). Larger values produce a more pronounced 8-bit look.
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
+
+## Horizontal Flip
+
+**DisplayName:** `Horizontal Flip`
+
+**Config Key:** `HorizontalFlip.Enabled`
+
+Mirrors the screen left-to-right for the duration of the event. Composes correctly with Vertical Flip and zoom effects. Can be toggled on/off in the config.
+
+**Properties**
+- `length` (event length in editor): How long the flip lasts, in beats. This event is resizable in the timeline.
+
+## Vertical Flip
+
+**DisplayName:** `Vertical Flip`
+
+**Config Key:** `VerticalFlip.Enabled`
+
+Mirrors the screen top-to-bottom for the duration of the event. Composes correctly with Horizontal Flip and zoom effects. Can be toggled on/off in the config.
+
+**Properties**
+- `length` (event length in editor): How long the flip lasts, in beats. This event is resizable in the timeline.
+

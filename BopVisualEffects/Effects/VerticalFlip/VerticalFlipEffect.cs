@@ -17,6 +17,9 @@ public sealed class VerticalFlipEffect : IVisualEffectDefinition
 	public string DisplayName => "Vertical Flip";
 
 	/// <inheritdoc />
+	public string ConfigKey => "VerticalFlip";
+
+	/// <inheritdoc />
 	public string Description => "Mirrors the screen vertically for a disorienting, playful effect.";
 
 	/// <inheritdoc />

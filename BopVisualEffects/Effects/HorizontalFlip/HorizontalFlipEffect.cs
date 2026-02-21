@@ -17,6 +17,9 @@ public sealed class HorizontalFlipEffect : IVisualEffectDefinition
 	public string DisplayName => "Horizontal Flip";
 
 	/// <inheritdoc />
+	public string ConfigKey => "HorizontalFlip";
+
+	/// <inheritdoc />
 	public string Description => "Mirrors the screen horizontally for a disorienting, playful effect.";
 
 	/// <inheritdoc />
