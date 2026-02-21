@@ -20,7 +20,7 @@
       https://nuget.bepinex.dev/v3/index.json
     </RestoreSources>
     <AssemblyName>BopVisualEffects</AssemblyName>
-    <Product>BopVisualEffects</Product>
+    <Product>Bop Visual Effects</Product>
     <Version>0.1.0</Version>
     <RootNamespace>BopVisualEffects</RootNamespace>
     <Description>Bits &amp; Bops mod that adds additional visual effects for the in-game editor.</Description>
@@ -45,6 +45,10 @@
     </Reference>
     <Reference Include="UnityEngine.CoreModule" Condition="'$(SkipGameReferences)' != 'true' and Exists('$(UnityManagedDir)/UnityEngine.CoreModule.dll')">
       <HintPath>$(UnityManagedDir)/UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.IMGUIModule" Condition="'$(SkipGameReferences)' != 'true' and Exists('$(UnityManagedDir)/UnityEngine.IMGUIModule.dll')">
+      <HintPath>$(UnityManagedDir)/UnityEngine.IMGUIModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="@(GameLibrary)" Condition="'$(SkipGameReferences)' != 'true' and '$(UnityManagedDir)' != ''">
