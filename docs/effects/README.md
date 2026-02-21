@@ -6,6 +6,8 @@ This page shows the visual effects currently available in BopVisualEffects and w
 
 **DisplayName:** `Camera Shake`
 
+**Config Key:** `CameraShake.Enabled`
+
 Adds a temporary camera shake effect for impact, hits, drops, or strong rhythm accents.
 
 **Properties**
@@ -23,6 +25,8 @@ Adds a temporary camera shake effect for impact, hits, drops, or strong rhythm a
 
 **DisplayName:** `Camera Tilt`
 
+**Config Key:** `CameraTilt.Enabled`
+
 Briefly tilts the camera on its Z-axis with a smooth swing arc. Great for expressive rhythm accents and musical phrases in a cartoonish style.
 
 **Properties**
@@ -32,6 +36,8 @@ Briefly tilts the camera on its Z-axis with a smooth swing arc. Great for expres
 ## Zoom Pulse
 
 **DisplayName:** `Zoom Pulse`
+
+**Config Key:** `ZoomPulse.Enabled`
 
 Rapidly zooms the camera in and then eases it back out, creating a punchy "push-in" accent. Works with both orthographic and perspective cameras.
 
@@ -43,6 +49,8 @@ Rapidly zooms the camera in and then eases it back out, creating a punchy "push-
 
 **DisplayName:** `Zoom In`
 
+**Config Key:** `ZoomIn.Enabled`
+
 Eases the camera smoothly into a zoomed-in view, holds at the target level, then eases back out. Great for building tension or drawing attention to a musical phrase.
 
 **Properties**
@@ -53,6 +61,8 @@ Eases the camera smoothly into a zoomed-in view, holds at the target level, then
 
 **DisplayName:** `Zoom Out`
 
+**Config Key:** `ZoomOut.Enabled`
+
 Eases the camera smoothly out to a wider view, holds, then eases back in. Great for revealing the scene or creating a sense of space.
 
 **Properties**
@@ -62,6 +72,8 @@ Eases the camera smoothly out to a wider view, holds, then eases back in. Great 
 ## Fog
 
 **DisplayName:** `Fog`
+
+**Config Key:** `Fog.Enabled`
 
 Draws a ground fog gradient overlay — opaque at the bottom of the screen, fading to transparent at the specified height. Works in both 2D and 3D scenes. Fades in and out smoothly.
 
@@ -75,6 +87,8 @@ Draws a ground fog gradient overlay — opaque at the bottom of the screen, fadi
 
 **DisplayName:** `Scanlines`
 
+**Config Key:** `Scanlines.Enabled`
+
 Draws horizontal CRT-style scan lines over the screen for a retro 8-bit aesthetic. Can optionally scroll up or down continuously. Fades in and out smoothly.
 
 **Properties**
@@ -87,6 +101,8 @@ Draws horizontal CRT-style scan lines over the screen for a retro 8-bit aestheti
 
 **DisplayName:** `Vignette`
 
+**Config Key:** `Vignette.Enabled`
+
 Darkens the screen edges with a smooth radial/elliptical gradient using a 32-segment triangle fan. The inner clear zone is aspect-ratio-corrected to appear circular on screen. Fades in and out smoothly.
 
 **Properties**
@@ -97,6 +113,8 @@ Darkens the screen edges with a smooth radial/elliptical gradient using a 32-seg
 ## Color Tint
 
 **DisplayName:** `Color Tint`
+
+**Config Key:** `ColorTint.Enabled`
 
 Applies a sustained full-screen color tint that fades in, holds, then fades out. Perfect for horror (red), sepia (warm), or supernatural (purple) atmospheres.
 
@@ -109,6 +127,8 @@ Applies a sustained full-screen color tint that fades in, holds, then fades out.
 
 **DisplayName:** `Letterbox`
 
+**Config Key:** `Letterbox.Enabled`
+
 Adds cinematic black bars at the top and bottom of the screen for a dramatic widescreen feel. Bars slide in and out smoothly.
 
 **Properties**
@@ -118,6 +138,8 @@ Adds cinematic black bars at the top and bottom of the screen for a dramatic wid
 ## Screen Noise
 
 **DisplayName:** `Screen Noise`
+
+**Config Key:** `ScreenNoise.Enabled`
 
 Draws animated TV static noise specks over the screen for a glitchy atmosphere. The noise changes every frame. Each speck uses an independent local RNG so global gameplay randomness is unaffected.
 
@@ -130,6 +152,8 @@ Draws animated TV static noise specks over the screen for a glitchy atmosphere. 
 ## Pixel Grid
 
 **DisplayName:** `Pixel Grid`
+
+**Config Key:** `PixelGrid.Enabled`
 
 Pixelates the screen by downsampling the camera's rendered output to a low-resolution render texture and upsampling it with nearest-neighbour (point) filtering — the same method as retro 8-bit displays. Every pixel block averages the colours within it, giving a genuine pixelated look. The block size ramps up and down smoothly at the event boundaries.
 

@@ -17,6 +17,9 @@ public sealed class ScanlinesEffect : IVisualEffectDefinition
 	public string DisplayName => "Scanlines";
 
 	/// <inheritdoc />
+	public string ConfigKey => "Scanlines";
+
+	/// <inheritdoc />
 	public string Description => "Draws horizontal CRT-style scan lines over the screen for a retro 8-bit aesthetic.";
 
 	/// <inheritdoc />

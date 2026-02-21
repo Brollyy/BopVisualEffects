@@ -17,6 +17,9 @@ public sealed class FogEffect : IVisualEffectDefinition
 	public string DisplayName => "Fog";
 
 	/// <inheritdoc />
+	public string ConfigKey => "Fog";
+
+	/// <inheritdoc />
 	public string Description => "Draws a ground fog overlay that rises from the bottom of the screen, fading in and out over its duration.";
 
 	/// <inheritdoc />

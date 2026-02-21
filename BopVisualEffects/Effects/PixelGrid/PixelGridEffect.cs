@@ -18,6 +18,9 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 	public string DisplayName => "Pixel Grid";
 
 	/// <inheritdoc />
+	public string ConfigKey => "PixelGrid";
+
+	/// <inheritdoc />
 	public string Description => "Pixelates the screen by averaging pixel blocks, simulating the chunky look of retro 8-bit games.";
 
 	/// <inheritdoc />

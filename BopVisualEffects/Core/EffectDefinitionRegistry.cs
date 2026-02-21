@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using BepInEx.Configuration;
 using BopVisualEffects.Effects.CameraTilt;
 using BopVisualEffects.Effects.CameraShake;
 using BopVisualEffects.Effects.ColorTint;
@@ -28,15 +29,19 @@ public sealed class EffectDefinitionRegistry
 
 	private readonly string _pluginGuid;
 	private readonly ClassLogger _log;
+	private readonly ConfigFile? _config;
 	private readonly Dictionary<string, IVisualEffectDefinition> _byDataModel;
 	private readonly List<IVisualEffectDefinition> _effects;
+	private readonly Dictionary<IVisualEffectDefinition, ConfigEntry<bool>> _enabledByDefinition;
 
-	private EffectDefinitionRegistry(string pluginGuid, ClassLogger log)
+	private EffectDefinitionRegistry(string pluginGuid, ClassLogger log, ConfigFile? config)
 	{
 		_pluginGuid = pluginGuid;
 		_log = log;
+		_config = config;
 		_byDataModel = [];
 		_effects = [];
+		_enabledByDefinition = [];
 	}
 
 	/// <summary>
@@ -44,9 +49,10 @@ public sealed class EffectDefinitionRegistry
 	/// </summary>
 	/// <param name="pluginGuid">Plugin GUID namespace.</param>
 	/// <param name="log">Logger used for registry diagnostics.</param>
-	public static void Initialize(string pluginGuid, ClassLogger log)
+	/// <param name="config">BepInEx config file used for per-effect enabled settings.</param>
+	public static void Initialize(string pluginGuid, ClassLogger log, ConfigFile config)
 	{
-		var registry = new EffectDefinitionRegistry(pluginGuid, log);
+		var registry = new EffectDefinitionRegistry(pluginGuid, log, config);
 		registry.Register(new CameraShakeEffect());
 		registry.Register(new CameraTiltEffect());
 		registry.Register(new ZoomPulseEffect());
@@ -91,6 +97,15 @@ public sealed class EffectDefinitionRegistry
 			_effects.Add(definition);
 		}
 
+		if (_config is not null)
+		{
+			_enabledByDefinition[definition] = _config.Bind(
+				"Effects",
+				$"{definition.ConfigKey}.Enabled",
+				true,
+				$"Whether the {definition.DisplayName} effect is active.");
+		}
+
 		_log.Info($"Registered visual effect definition '{definition.DisplayName}' as '{dataModel}'.");
 	}
 
@@ -99,7 +114,10 @@ public sealed class EffectDefinitionRegistry
 	/// </summary>
 	public IReadOnlyList<MixtapeEventTemplate> BuildTemplates()
 	{
-		return _effects.Select(e => e.CreateTemplate(_pluginGuid)).ToArray();
+		return _effects
+			.Where(IsEnabled)
+			.Select(e => e.CreateTemplate(_pluginGuid))
+			.ToArray();
 	}
 
 	/// <summary>
@@ -110,6 +128,15 @@ public sealed class EffectDefinitionRegistry
 		if (!_byDataModel.TryGetValue(entity.dataModel, out var definition))
 			return false;
 
+		if (!IsEnabled(definition))
+			return false;
+
 		return definition.TrySchedule(entity, loader);
+	}
+
+	private bool IsEnabled(IVisualEffectDefinition definition)
+	{
+		// When no config entry was bound (e.g. config was not provided), treat the effect as enabled.
+		return !_enabledByDefinition.TryGetValue(definition, out var entry) || entry.Value;
 	}
 }

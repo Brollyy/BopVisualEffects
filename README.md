@@ -6,6 +6,25 @@ BepInEx 5.x mod for Bits & Bops that adds additional visual effects for the in-g
 
 See [this document](docs/effects/README.md) for the full list of effects this mod enables.
 
+## Configuration
+
+Each effect can be individually enabled or disabled in the BepInEx config file (`<GameRoot>/BepInEx/config/BopVisualEffects.cfg`), under the `[Effects]` section.
+
+The config file is at `<GameRoot>/BepInEx/config/BopVisualEffects.cfg`. It's generated automatically on first load. To disable an effect, set its entry to `false`:
+
+```ini
+[Effects]
+
+## Whether the Camera Shake effect is active.
+# Setting type: Boolean
+# Default value: true
+CameraShake.Enabled = false
+```
+
+See the [effects documentation](docs/effects/README.md) for all available config keys.
+
+Disabled effects are removed from the in-game editor and will not run during playback.
+
 ## Contributing
 
 ### Local setup
@@ -23,14 +42,15 @@ If `BepInExPluginsDir` exists, build output is copied there automatically.
 ### Adding a new effect
 
 1. Create a class in `BopVisualEffects/Effects/<EffectName>/` that implements `IVisualEffectDefinition`.
-2. Implement `CreateTemplate` so the effect appears in the editor template list.
-3. Add a dedicated runtime runner `MonoBehaviour` for the effect (in the same file or a sibling file).
-4. Implement `TrySchedule` to read entity properties and spawn your runner through `EffectRuntimeController.Instance.SpawnRunner<T>(...)`.
-5. Register the effect once in `EffectDefinitionRegistry.Initialize(...)` using `Register(new YourEffect())`.
-6. Add media for documentation:
+2. Fill in `Id` (lowercase, with spaces), `DisplayName` (human-readable), `ConfigKey` (PascalCase, used for config file entries) and `Description`.
+3. Implement `CreateTemplate` so the effect appears in the editor template list.
+4. Add a dedicated runtime runner `MonoBehaviour` for the effect (in the same file or a sibling file).
+5. Implement `TrySchedule` to read entity properties and spawn your runner through `EffectRuntimeController.Instance.SpawnRunner<T>(...)`.
+6. Register the effect once in `EffectDefinitionRegistry.Initialize(...)` using `Register(new YourEffect())`.
+7. Add media for documentation:
    - `docs/effects/<effect-id>/preview.gif`
    - `docs/effects/<effect-id>/demo.mp4`
-7. Update `docs/effects/README.md`.
+8. Update `docs/effects/README.md`.
 
 ### Pull requests
 

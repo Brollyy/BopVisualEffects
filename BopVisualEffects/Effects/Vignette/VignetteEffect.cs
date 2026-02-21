@@ -17,6 +17,9 @@ public sealed class VignetteEffect : IVisualEffectDefinition
 	public string DisplayName => "Vignette";
 
 	/// <inheritdoc />
+	public string ConfigKey => "Vignette";
+
+	/// <inheritdoc />
 	public string Description => "Darkens the screen edges with a smooth gradient frame for a dramatic or horror atmosphere.";
 
 	/// <inheritdoc />

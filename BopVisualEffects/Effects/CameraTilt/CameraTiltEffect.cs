@@ -16,6 +16,9 @@ public sealed class CameraTiltEffect : IVisualEffectDefinition
 	public string DisplayName => "Camera Tilt";
 
 	/// <inheritdoc />
+	public string ConfigKey => "CameraTilt";
+
+	/// <inheritdoc />
 	public string Description => "Tilts the camera briefly on its Z-axis for a swinging, cartoonish rhythm accent.";
 
 	/// <inheritdoc />

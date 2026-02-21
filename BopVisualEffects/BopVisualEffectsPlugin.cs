@@ -30,7 +30,7 @@ public sealed class BopVisualEffectsPlugin : BaseUnityPlugin
 		var pluginLog = ClassLogger.GetForClass<BopVisualEffectsPlugin>();
 
 		EffectRuntimeController.EnsureInstance();
-		EffectDefinitionRegistry.Initialize(MyPluginInfo.PLUGIN_GUID, ClassLogger.GetForClass<EffectDefinitionRegistry>());
+		EffectDefinitionRegistry.Initialize(MyPluginInfo.PLUGIN_GUID, ClassLogger.GetForClass<EffectDefinitionRegistry>(), Config);
 		EffectTemplateManager.RefreshTemplates(
 			MyPluginInfo.PLUGIN_GUID,
 			ClassLogger.GetForClass(typeof(EffectTemplateManager)));

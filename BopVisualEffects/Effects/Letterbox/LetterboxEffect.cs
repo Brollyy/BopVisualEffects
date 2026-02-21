@@ -17,6 +17,9 @@ public sealed class LetterboxEffect : IVisualEffectDefinition
 	public string DisplayName => "Letterbox";
 
 	/// <inheritdoc />
+	public string ConfigKey => "Letterbox";
+
+	/// <inheritdoc />
 	public string Description => "Adds cinematic black bars at the top and bottom of the screen for a dramatic widescreen feel.";
 
 	/// <inheritdoc />
