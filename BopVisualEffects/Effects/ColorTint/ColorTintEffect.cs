@@ -130,7 +130,7 @@ public sealed class ColorTintEffect : IVisualEffectDefinition
 			else
 				envelope = 1f;
 
-			if (_overlay)
+			if (_overlay != null)
 				_overlay.SetColor(_r, _g, _b, _maxAlpha * envelope);
 		}
 
@@ -152,7 +152,7 @@ public sealed class ColorTintEffect : IVisualEffectDefinition
 
 		private void RemoveOverlay()
 		{
-			if (_overlay)
+			if (_overlay != null)
 			{
 				Destroy(_overlay);
 			}

@@ -134,7 +134,7 @@ public sealed class FogEffect : IVisualEffectDefinition
 			else
 				envelope = 1f;
 
-			if (_overlay)
+			if (_overlay != null)
 				_overlay.SetParams(_r, _g, _b, _maxAlpha * envelope, _height);
 		}
 
@@ -156,7 +156,7 @@ public sealed class FogEffect : IVisualEffectDefinition
 
 		private void RemoveOverlay()
 		{
-			if (_overlay)
+			if (_overlay != null)
 			{
 				Destroy(_overlay);
 			}

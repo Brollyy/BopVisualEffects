@@ -121,7 +121,7 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 				envelope = 1f;
 
 			var currentBlockSize = Mathf.Max(1, Mathf.RoundToInt(Mathf.Lerp(1f, _pixelSize, envelope)));
-			if (_overlay)
+			if (_overlay != null)
 				_overlay.SetBlockSize(currentBlockSize);
 		}
 
@@ -143,7 +143,7 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 
 		private void RemoveOverlay()
 		{
-			if (_overlay)
+			if (_overlay != null)
 			{
 				Destroy(_overlay);
 			}

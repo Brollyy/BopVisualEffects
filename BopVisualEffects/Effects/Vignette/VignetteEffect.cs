@@ -122,7 +122,7 @@ public sealed class VignetteEffect : IVisualEffectDefinition
 			else
 				envelope = 1f;
 
-			if (_overlay)
+			if (_overlay != null)
 				_overlay.SetParams(_alpha * envelope, _size);
 		}
 
@@ -144,7 +144,7 @@ public sealed class VignetteEffect : IVisualEffectDefinition
 
 		private void RemoveOverlay()
 		{
-			if (_overlay)
+			if (_overlay != null)
 			{
 				Destroy(_overlay);
 			}

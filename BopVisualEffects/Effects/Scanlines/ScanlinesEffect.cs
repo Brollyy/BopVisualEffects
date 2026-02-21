@@ -126,7 +126,7 @@ public sealed class ScanlinesEffect : IVisualEffectDefinition
 			else
 				envelope = 1f;
 
-			if (_overlay)
+			if (_overlay != null)
 				_overlay.SetParams(_alpha * envelope, _count, _scrollSpeed);
 		}
 
@@ -148,7 +148,7 @@ public sealed class ScanlinesEffect : IVisualEffectDefinition
 
 		private void RemoveOverlay()
 		{
-			if (_overlay)
+			if (_overlay != null)
 			{
 				Destroy(_overlay);
 			}

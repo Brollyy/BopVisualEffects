@@ -118,7 +118,7 @@ public sealed class LetterboxEffect : IVisualEffectDefinition
 			else
 				envelope = 1f;
 
-			if (_overlay)
+			if (_overlay != null)
 				_overlay.SetParams(_size * envelope);
 		}
 
@@ -140,7 +140,7 @@ public sealed class LetterboxEffect : IVisualEffectDefinition
 
 		private void RemoveOverlay()
 		{
-			if (_overlay)
+			if (_overlay != null)
 			{
 				Destroy(_overlay);
 			}

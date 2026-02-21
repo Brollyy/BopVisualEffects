@@ -91,7 +91,7 @@ public sealed class EffectRuntimeController : MonoBehaviour
 				if (!scripts.TryGetValue(sceneKey, out GameplayScript gameplayScript) || gameplayScript is null)
 					continue;
 
-				if (!gameplayScript.cameraScript)
+				if (gameplayScript.cameraScript == null)
 					continue;
 
 				Camera? camera = gameplayScript.cameraScript.GetComponent<Camera>();
