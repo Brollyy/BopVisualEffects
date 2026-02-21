@@ -8,7 +8,7 @@ See [this document](docs/effects/README.md) for the full list of effects this mo
 
 ## Configuration
 
-Each effect can be individually enabled or disabled in the BepInEx config file (`BepInEx/config/com.brollyy.bopvisualeffects.cfg`), under the `[Effects]` section.
+Each effect can be individually enabled or disabled in the BepInEx config file (`<GameRoot>/BepInEx/config/BopVisualEffects.cfg`), under the `[Effects]` section.
 
 The config file is at `<GameRoot>/BepInEx/config/BopVisualEffects.cfg`. It's generated automatically on first load. To disable an effect, set its entry to `false`:
 
