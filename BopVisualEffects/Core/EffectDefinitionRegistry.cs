@@ -97,7 +97,7 @@ public sealed class EffectDefinitionRegistry
 		{
 			_enabledByDefinition[definition] = _config.Bind(
 				"Effects",
-				$"{definition.DisplayName}.Enabled",
+				$"{definition.ConfigKey}.Enabled",
 				true,
 				$"Whether the {definition.DisplayName} effect is active.");
 		}

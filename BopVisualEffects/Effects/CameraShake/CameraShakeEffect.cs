@@ -16,6 +16,9 @@ public sealed class CameraShakeEffect : IVisualEffectDefinition
 	public string DisplayName => "Camera Shake";
 
 	/// <inheritdoc />
+	public string ConfigKey => "CameraShake";
+
+	/// <inheritdoc />
 	public string Description => "Applies temporary camera shake for impact or emphasis.";
 
 	/// <inheritdoc />

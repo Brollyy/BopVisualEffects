@@ -16,6 +16,9 @@ public sealed class ZoomPulseEffect : IVisualEffectDefinition
 	public string DisplayName => "Zoom Pulse";
 
 	/// <inheritdoc />
+	public string ConfigKey => "ZoomPulse";
+
+	/// <inheritdoc />
 	public string Description => "Briefly zooms the camera in and back out for a punchy, cartoonish accent.";
 
 	/// <inheritdoc />
