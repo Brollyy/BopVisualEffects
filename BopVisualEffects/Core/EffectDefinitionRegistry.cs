@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using BopVisualEffects.Effects.CameraTilt;
 using BopVisualEffects.Effects.CameraShake;
+using BopVisualEffects.Effects.ZoomPulse;
 
 namespace BopVisualEffects.Core;
 
@@ -35,6 +37,8 @@ public sealed class EffectDefinitionRegistry
 	{
 		var registry = new EffectDefinitionRegistry(pluginGuid, log);
 		registry.Register(new CameraShakeEffect());
+		registry.Register(new CameraTiltEffect());
+		registry.Register(new ZoomPulseEffect());
 		_instance = registry;
 	}
 
