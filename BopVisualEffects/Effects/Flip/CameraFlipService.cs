@@ -35,9 +35,13 @@ internal static class CameraFlipService
 	{
 		if (!_states.TryGetValue(camera, out var state))
 		{
-			state = new FlipState { Overlay = camera.gameObject.AddComponent<CameraFlipOverlay>() };
+			state = new FlipState();
 			_states[camera] = state;
 		}
+
+		// Recreate the overlay if it was destroyed externally (e.g., during a scene transition).
+		if (!state.Overlay)
+			state.Overlay = camera.gameObject.AddComponent<CameraFlipOverlay>();
 
 		if (horizontal)
 			state.HorizontalCount++;
@@ -65,14 +69,19 @@ internal static class CameraFlipService
 
 		if (state.HorizontalCount == 0 && state.VerticalCount == 0)
 		{
-			if (state.Overlay != null)
+			if (state.Overlay)
 				Object.Destroy(state.Overlay);
 
 			_states.Remove(camera);
 		}
-		else
+		else if (state.Overlay)
 		{
 			state.Overlay!.UpdateState(state.HorizontalCount > 0, state.VerticalCount > 0);
+		}
+		else
+		{
+			// Overlay was destroyed externally; clean up the stale state entry.
+			_states.Remove(camera);
 		}
 	}
 
@@ -87,6 +96,7 @@ internal static class CameraFlipService
 		private bool _flipH;
 		private bool _flipV;
 		private bool _savedInvertCulling;
+		private bool _hasSavedInvertCulling;
 
 		/// <summary>
 		/// Updates the active flip axes. Called by <see cref="CameraFlipService"/> whenever the flip state changes.
@@ -105,31 +115,43 @@ internal static class CameraFlipService
 		// Fires just before the camera culls the scene — apply combined flip to the current natural projection.
 		private void OnPreCull()
 		{
-			if (_camera is null)
+			if (!_camera)
 				return;
 
 			// Reset so Unity recomputes projection from current fieldOfView/orthographicSize,
 			// picking up any changes made this frame by other effects (e.g. ZoomIn/ZoomOut).
-			_camera.ResetProjectionMatrix();
+			_camera!.ResetProjectionMatrix();
 			var scaleX = _flipH ? -1f : 1f;
 			var scaleY = _flipV ? -1f : 1f;
 			_camera.projectionMatrix = Matrix4x4.Scale(new Vector3(scaleX, scaleY, 1f)) * _camera.projectionMatrix;
 			// An odd number of negated axes reverses triangle winding; invert culling to compensate.
 			_savedInvertCulling = GL.invertCulling;
+			_hasSavedInvertCulling = true;
 			GL.invertCulling = _flipH != _flipV;
 		}
 
 		// Fires after the camera finishes rendering — restore natural projection and culling for next frame.
 		private void OnPostRender()
 		{
-			GL.invertCulling = _savedInvertCulling;
-			_camera?.ResetProjectionMatrix();
+			RestoreState();
 		}
 
 		private void OnDisable()
 		{
-			GL.invertCulling = _savedInvertCulling;
-			_camera?.ResetProjectionMatrix();
+			RestoreState();
+		}
+
+		private void RestoreState()
+		{
+			if (_hasSavedInvertCulling)
+			{
+				GL.invertCulling = _savedInvertCulling;
+				_hasSavedInvertCulling = false;
+			}
+
+			if (_camera)
+				_camera!.ResetProjectionMatrix();
 		}
 	}
 }
+
