@@ -26,9 +26,9 @@
 - CI-style build (no local game references):
   - `dotnet build BopVisualEffects.sln -c Release -p:SkipGameReferences=true`
 - Formatting/style/analyzer checks:
-  - `dotnet format whitespace BopVisualEffects.sln --verify-no-changes`
-  - `dotnet format style BopVisualEffects.sln --verify-no-changes`
-  - `dotnet format analyzers BopVisualEffects.sln --verify-no-changes`
+  - `dotnet format whitespace BopVisualEffects.sln --verify-no-changes --exclude BopVisualEffects/obj`
+  - `dotnet format style BopVisualEffects.sln --verify-no-changes --exclude BopVisualEffects/obj`
+  - `dotnet format analyzers BopVisualEffects.sln --verify-no-changes --exclude BopVisualEffects/obj`
 
 ## Formatting and style rules
 - Follow `.editorconfig` and `.gitattributes`.
