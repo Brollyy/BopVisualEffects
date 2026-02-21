@@ -17,6 +17,9 @@ public sealed class ColorTintEffect : IVisualEffectDefinition
 	public string DisplayName => "Color Tint";
 
 	/// <inheritdoc />
+	public string ConfigKey => "ColorTint";
+
+	/// <inheritdoc />
 	public string Description => "Applies a sustained full-screen color tint that fades in and out, for mood or atmosphere.";
 
 	/// <inheritdoc />

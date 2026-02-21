@@ -18,6 +18,12 @@ public interface IVisualEffectDefinition
 	string DisplayName { get; }
 
 	/// <summary>
+	/// Stable PascalCase key used for config file entries (e.g. "CameraShake").
+	/// Must be unique across all registered effects.
+	/// </summary>
+	string ConfigKey { get; }
+
+	/// <summary>
 	/// One-line description of what the effect does.
 	/// </summary>
 	string Description { get; }

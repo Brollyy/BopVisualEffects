@@ -16,6 +16,9 @@ public sealed class ZoomInEffect : IVisualEffectDefinition
 	public string DisplayName => "Zoom In";
 
 	/// <inheritdoc />
+	public string ConfigKey => "ZoomIn";
+
+	/// <inheritdoc />
 	public string Description => "Eases the camera into a zoomed-in view, holds, then returns to normal — great for building tension.";
 
 	/// <inheritdoc />

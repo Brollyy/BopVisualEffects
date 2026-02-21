@@ -17,6 +17,9 @@ public sealed class ScreenNoiseEffect : IVisualEffectDefinition
 	public string DisplayName => "Screen Noise";
 
 	/// <inheritdoc />
+	public string ConfigKey => "ScreenNoise";
+
+	/// <inheritdoc />
 	public string Description => "Draws animated TV static noise specks over the screen for a glitchy or horror atmosphere.";
 
 	/// <inheritdoc />

@@ -16,6 +16,9 @@ public sealed class ZoomOutEffect : IVisualEffectDefinition
 	public string DisplayName => "Zoom Out";
 
 	/// <inheritdoc />
+	public string ConfigKey => "ZoomOut";
+
+	/// <inheritdoc />
 	public string Description => "Eases the camera out to a wider view, holds, then returns to normal — great for revealing the scene.";
 
 	/// <inheritdoc />
