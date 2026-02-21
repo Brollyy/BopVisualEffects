@@ -45,7 +45,7 @@ public sealed class HorizontalFlipEffect : IVisualEffectDefinition
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<HorizontalFlipRunner>(runner =>
-				runner.Initialize(loader, loader.jukebox, startBeat, endBeat));
+				runner.Initialize(loader, loader.jukebox, endBeat));
 		}
 	}
 
@@ -56,12 +56,13 @@ public sealed class HorizontalFlipEffect : IVisualEffectDefinition
 		private MixtapeLoaderCustom? _loader;
 		private JukeboxScript? _jukebox;
 		private Camera? _camera;
+		private Matrix4x4 _originalProjection;
 		private Matrix4x4 _flippedProjection;
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float endBeat)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
@@ -115,8 +116,12 @@ public sealed class HorizontalFlipEffect : IVisualEffectDefinition
 				return;
 
 			_camera = camera;
+			// Reset to the camera's natural projection so we always flip from a clean base,
+			// regardless of whether another projection-modifying effect is currently active.
+			camera.ResetProjectionMatrix();
+			_originalProjection = camera.projectionMatrix;
 			// Negate the X axis of the projection matrix to mirror the screen horizontally.
-			_flippedProjection = Matrix4x4.Scale(new Vector3(-1f, 1f, 1f)) * camera.projectionMatrix;
+			_flippedProjection = Matrix4x4.Scale(new Vector3(-1f, 1f, 1f)) * _originalProjection;
 			_initialized = true;
 		}
 
@@ -125,7 +130,7 @@ public sealed class HorizontalFlipEffect : IVisualEffectDefinition
 			if (_camera is null)
 				return;
 
-			_camera.ResetProjectionMatrix();
+			_camera.projectionMatrix = _originalProjection;
 		}
 	}
 }
