@@ -169,3 +169,38 @@ Draws animated TV static noise specks over the screen for a glitchy or horror at
 
 [Watch video preview](screen-noise/demo.mp4)
 
+## Pixel Grid
+
+**DisplayName:** `Pixel Grid`
+
+Draws a full 2D pixel cell grid over the screen — both horizontal and vertical dividers between pixel-sized cells — to simulate the chunky, separated-pixel look of retro 8-bit games. Distinct from Scanlines (horizontal only).
+
+**Properties**
+- `alpha`: Darkness of the grid lines (0–1; default `0.4`).
+- `pixel_size`: Width/height of each simulated pixel as a normalized screen fraction (default `0.025`; larger values = fewer, bigger pixels).
+- `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
+
+**Preview media**
+
+![Pixel Grid preview](pixel-grid/preview.gif)
+
+[Watch video preview](pixel-grid/demo.mp4)
+
+## Horror
+
+**DisplayName:** `Horror`
+
+Draws blood-red gradient vignette panels at the screen edges that slowly throb using a sinusoidal pulse, evoking a creeping sense of dread. Distinct from the generic Vignette (black edges) by its blood-red color and animated pulsing.
+
+**Properties**
+- `alpha`: Maximum opacity of the blood-red edge (0–1; default `0.75`).
+- `size`: How far the red edge extends inward as a screen fraction (0–0.5; default `0.35`).
+- `pulse_rate`: Number of pulse cycles per beat (default `0.5` — one throb every 2 beats).
+- `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
+
+**Preview media**
+
+![Horror preview](horror/preview.gif)
+
+[Watch video preview](horror/demo.mp4)
+
