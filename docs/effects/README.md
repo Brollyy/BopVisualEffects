@@ -124,7 +124,7 @@ Draws animated TV static noise specks over the screen for a glitchy atmosphere. 
 **Properties**
 - `alpha`: Maximum opacity of the noise specks (0–1; default `0.5`).
 - `count`: Number of noise specks drawn per frame (10–2000; default `400`).
-- `size`: Physical size of each speck in normalised screen coordinates (0.005–0.1; default `0.01`).
+- `size`: Physical size of each speck in normalized screen coordinates (0.005–0.1; default `0.01`).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
 
 ## Pixel Grid
