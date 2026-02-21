@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using BepInEx.Configuration;
 using BepInEx.Logging;
 
-namespace BopVisualEffects.Services;
+namespace BopVisualEffects.Core;
 
 /// <summary>
 /// Log levels used by the mod logger to filter messages per class.
@@ -20,16 +20,16 @@ public enum ModLogLevel
 /// <summary>
 /// Singleton logging service that creates and caches class-specific loggers.
 /// </summary>
-public sealed class LogService
+public sealed class ClassLogger
 {
 	/// <summary>
 	/// Global logger service instance initialized at plugin startup.
 	/// </summary>
-	public static LogService? Instance { get; private set; }
+	public static ClassLogger? Instance { get; private set; }
 
 	private readonly ConfigFile? _config;
 	private readonly string? _sourcePrefix;
-	private readonly Dictionary<string, LogService>? _cache;
+	private readonly Dictionary<string, ClassLogger>? _cache;
 	private readonly ManualLogSource? _logSource;
 	private readonly ConfigEntry<ModLogLevel>? _minimumLevel;
 	private readonly string? _className;
@@ -41,7 +41,7 @@ public sealed class LogService
 	/// <param name="sourcePrefix">Short source label shown in log messages.</param>
 	public static void Initialize(ConfigFile config, string sourcePrefix)
 	{
-		Instance = new LogService(config, sourcePrefix);
+		Instance = new ClassLogger(config, sourcePrefix);
 	}
 
 	/// <summary>
@@ -49,7 +49,7 @@ public sealed class LogService
 	/// </summary>
 	/// <typeparam name="T">Type that will own the logger.</typeparam>
 	/// <returns>A logger configured for <typeparamref name="T"/>.</returns>
-	public static LogService GetForClass<T>()
+	public static ClassLogger GetForClass<T>()
 	{
 		return GetForClass(typeof(T));
 	}
@@ -60,26 +60,31 @@ public sealed class LogService
 	/// <param name="type">Type that will own the logger.</param>
 	/// <returns>A logger configured for <paramref name="type"/>.</returns>
 	/// <exception cref="InvalidOperationException">Thrown when the singleton is not initialized.</exception>
-	public static LogService GetForClass(Type type)
+	public static ClassLogger GetForClass(Type type)
 	{
 		return Instance is null
 			? throw new InvalidOperationException(
-				"LogService is not initialized. Call LogService.Initialize(...) first.")
+				"ClassLogger is not initialized. Call ClassLogger.Initialize(...) first.")
 			: Instance.For(type);
 	}
 
-	private LogService(ConfigFile config, string sourcePrefix)
+	private ClassLogger(ConfigFile config, string sourcePrefix)
 	{
 		_config = config;
 		_sourcePrefix = sourcePrefix;
 		_cache = [];
 	}
 
-	private LogService(ManualLogSource logSource, ConfigEntry<ModLogLevel> minimumLevel, string className)
+	private ClassLogger(
+		ManualLogSource logSource,
+		ConfigEntry<ModLogLevel> minimumLevel,
+		string className,
+		string sourcePrefix)
 	{
 		_logSource = logSource;
 		_minimumLevel = minimumLevel;
 		_className = className;
+		_sourcePrefix = sourcePrefix;
 	}
 
 	/// <summary>
@@ -117,16 +122,18 @@ public sealed class LogService
 	/// </summary>
 	/// <param name="level">Requested log level.</param>
 	/// <param name="message">Message text.</param>
-	/// <exception cref="InvalidOperationException">Thrown when called on the singleton manager instead of a class logger.</exception>
+	/// <exception cref="InvalidOperationException">
+	/// Thrown when called on the singleton manager instead of a class logger.
+	/// </exception>
 	private void Log(ModLogLevel level, string message)
 	{
-		if (_logSource is null || _minimumLevel is null || _className is null || _sourcePrefix is null)
-			throw new InvalidOperationException("Use LogService.GetForClass<T>() to obtain a class logger instance.");
+		if (_logSource is null || _minimumLevel is null || _className is null)
+			throw new InvalidOperationException("Use ClassLogger.GetForClass<T>() to obtain a class logger instance.");
 
 		if (level < _minimumLevel.Value)
 			return;
 
-		var formattedMessage = $"[{_sourcePrefix}] [{_className}] {message}";
+		var formattedMessage = $"[{_className}] {message}";
 
 		switch (level)
 		{
@@ -156,7 +163,7 @@ public sealed class LogService
 	/// </summary>
 	/// <typeparam name="T">Type that will own the logger.</typeparam>
 	/// <returns>A logger configured for <typeparamref name="T"/>.</returns>
-	public LogService For<T>()
+	public ClassLogger For<T>()
 	{
 		return For(typeof(T));
 	}
@@ -166,25 +173,27 @@ public sealed class LogService
 	/// </summary>
 	/// <param name="type">Type that will own the logger.</param>
 	/// <returns>A logger configured for <paramref name="type"/>.</returns>
-	/// <exception cref="InvalidOperationException">Thrown when called on a class logger instead of the singleton manager.</exception>
-	public LogService For(Type type)
+	/// <exception cref="InvalidOperationException">
+	/// Thrown when called on a class logger instead of the singleton manager.
+	/// </exception>
+	public ClassLogger For(Type type)
 	{
 		if (_cache is null || _config is null || _sourcePrefix is null)
 			throw new InvalidOperationException("Use the singleton manager instance to resolve class loggers.");
 
-		string className = type.Name;
+		var className = type.Name;
 
 		if (_cache.TryGetValue(className, out var existing))
 			return existing;
 
-		ManualLogSource source = Logger.CreateLogSource(_sourcePrefix);
-		ConfigEntry<ModLogLevel> minimumLevel = _config.Bind(
+		var source = Logger.CreateLogSource(_sourcePrefix);
+		var minimumLevel = _config.Bind(
 			"Logging",
 			$"{className}.MinLevel",
 			ModLogLevel.Info,
 			$"Minimum log level for {className}.");
 
-		var classLogger = new LogService(source, minimumLevel, className);
+		var classLogger = new ClassLogger(source, minimumLevel, className, _sourcePrefix);
 		_cache[className] = classLogger;
 		return classLogger;
 	}
