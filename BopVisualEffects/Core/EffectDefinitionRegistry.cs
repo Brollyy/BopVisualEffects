@@ -1,7 +1,18 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using BopVisualEffects.Effects.CameraTilt;
 using BopVisualEffects.Effects.CameraShake;
+using BopVisualEffects.Effects.ColorTint;
+using BopVisualEffects.Effects.Fog;
+using BopVisualEffects.Effects.Letterbox;
+using BopVisualEffects.Effects.PixelGrid;
+using BopVisualEffects.Effects.Scanlines;
+using BopVisualEffects.Effects.ScreenNoise;
+using BopVisualEffects.Effects.Vignette;
+using BopVisualEffects.Effects.ZoomIn;
+using BopVisualEffects.Effects.ZoomOut;
+using BopVisualEffects.Effects.ZoomPulse;
 
 namespace BopVisualEffects.Core;
 
@@ -35,6 +46,17 @@ public sealed class EffectDefinitionRegistry
 	{
 		var registry = new EffectDefinitionRegistry(pluginGuid, log);
 		registry.Register(new CameraShakeEffect());
+		registry.Register(new CameraTiltEffect());
+		registry.Register(new ZoomPulseEffect());
+		registry.Register(new ZoomInEffect());
+		registry.Register(new ZoomOutEffect());
+		registry.Register(new FogEffect());
+		registry.Register(new ScanlinesEffect());
+		registry.Register(new VignetteEffect());
+		registry.Register(new ColorTintEffect());
+		registry.Register(new LetterboxEffect());
+		registry.Register(new ScreenNoiseEffect());
+		registry.Register(new PixelGridEffect());
 		_instance = registry;
 	}
 

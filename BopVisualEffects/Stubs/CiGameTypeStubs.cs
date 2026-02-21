@@ -1,4 +1,7 @@
 #if SKIP_GAME_REFERENCES
+#pragma warning disable CA1050 // Declare types in namespaces — stubs mirror global-namespace game types
+#pragma warning disable CA1051 // Do not declare visible instance fields — stubs mirror Unity-serialized public fields
+#pragma warning disable CA1822 // Mark members as static — stubs must match real instance method signatures
 using System;
 using System.Collections.Generic;
 using UnityEngine;
