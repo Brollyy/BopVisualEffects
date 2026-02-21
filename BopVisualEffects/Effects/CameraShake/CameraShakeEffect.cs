@@ -64,8 +64,8 @@ public sealed class CameraShakeEffect : IVisualEffectDefinition
 		private float _endBeat;
 		private MixtapeLoaderCustom? _loader;
 		private JukeboxScript? _jukebox;
-		private Transform? _targetTransform;
-		private Vector3 _initialLocalPosition;
+		private CameraShakeManager? _manager;
+		private System.Func<Vector3>? _offsetProvider;
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
@@ -78,7 +78,7 @@ public sealed class CameraShakeEffect : IVisualEffectDefinition
 			_endBeat = endBeat;
 			_amplitude = Mathf.Max(0f, amplitude);
 			_frequency = Mathf.Max(0.1f, frequency);
-			InitializeTargetCamera();
+			TryRegisterWithManager();
 		}
 
 		/// <summary>
@@ -86,7 +86,7 @@ public sealed class CameraShakeEffect : IVisualEffectDefinition
 		/// </summary>
 		public void Stop()
 		{
-			ResetCameraTransform();
+			Deregister();
 			Destroy(this);
 		}
 
@@ -100,59 +100,122 @@ public sealed class CameraShakeEffect : IVisualEffectDefinition
 
 			if (!_initialized)
 			{
-				InitializeTargetCamera();
+				TryRegisterWithManager();
 				if (!_initialized)
 					return;
 			}
 
-			var currentBeat = _jukebox.CurrentBeat;
-			if (currentBeat >= _endBeat)
+			if (_jukebox.CurrentBeat >= _endBeat)
 			{
 				Stop();
 				return;
 			}
-
-			var progress = Mathf.InverseLerp(_startBeat, _endBeat, currentBeat);
-			var envelope = 1f - progress;
-			if (envelope <= 0f)
-			{
-				Stop();
-				return;
-			}
-
-			var timeScale = Time.timeScale;
-			var strength = _amplitude * envelope * timeScale;
-
-			var noiseTime = currentBeat * _frequency;
-			var x = Mathf.PerlinNoise(noiseTime, 0f) * 2f - 1f;
-			var y = Mathf.PerlinNoise(0f, noiseTime) * 2f - 1f;
-			Vector3 offset = new(x, y, 0f);
-
-			_targetTransform!.localPosition = _initialLocalPosition + (offset * strength);
 		}
 
 		private void OnDisable()
 		{
-			ResetCameraTransform();
+			Deregister();
 		}
 
-		private void InitializeTargetCamera()
+		private void TryRegisterWithManager()
 		{
 			Camera? camera = EffectRuntimeController.ResolveEffectCamera(_loader);
 			if (camera is null)
 				return;
 
-			_targetTransform = camera.transform;
-			_initialLocalPosition = _targetTransform.localPosition;
+			_offsetProvider = ComputeOffset;
+			_manager = CameraShakeManager.GetOrCreate(camera);
+			_manager.Register(_offsetProvider);
 			_initialized = true;
 		}
 
-		private void ResetCameraTransform()
+		private void Deregister()
 		{
-			if (_targetTransform is null)
+			if (_offsetProvider is null || _manager is null || !_manager)
 				return;
 
-			_targetTransform.localPosition = _initialLocalPosition;
+			_manager.Deregister(_offsetProvider);
+			_offsetProvider = null;
+		}
+
+		private Vector3 ComputeOffset()
+		{
+			if (_jukebox is null)
+				return Vector3.zero;
+
+			var currentBeat = _jukebox.CurrentBeat;
+			var progress = Mathf.InverseLerp(_startBeat, _endBeat, currentBeat);
+			var envelope = 1f - progress;
+			if (envelope <= 0f)
+				return Vector3.zero;
+
+			var strength = _amplitude * envelope * Time.timeScale;
+			var noiseTime = currentBeat * _frequency;
+			var x = Mathf.PerlinNoise(noiseTime, 0f) * 2f - 1f;
+			var y = Mathf.PerlinNoise(0f, noiseTime) * 2f - 1f;
+			return new Vector3(x, y, 0f) * strength;
+		}
+	}
+
+	/// <summary>
+	/// Manages the aggregate camera shake for a single camera.
+	/// Captures the camera's baseline position once at creation and accumulates
+	/// offset contributions from all active <see cref="CameraShakeRunner"/> instances,
+	/// restoring the baseline when all shakes complete.
+	/// </summary>
+	private sealed class CameraShakeManager : MonoBehaviour
+	{
+		private Vector3 _baseline;
+		private readonly List<System.Func<Vector3>> _offsetProviders = [];
+
+		/// <summary>
+		/// Gets or creates a <see cref="CameraShakeManager"/> on the given camera's
+		/// <see cref="GameObject"/>, capturing the baseline position on first creation.
+		/// </summary>
+		public static CameraShakeManager GetOrCreate(Camera camera)
+		{
+			var existing = camera.GetComponent<CameraShakeManager>();
+			if (existing is not null)
+				return existing;
+
+			var manager = camera.gameObject.AddComponent<CameraShakeManager>();
+			manager._baseline = camera.transform.localPosition;
+			return manager;
+		}
+
+		/// <summary>
+		/// Registers an offset provider contributed by one <see cref="CameraShakeRunner"/>.
+		/// </summary>
+		public void Register(System.Func<Vector3> offsetProvider)
+		{
+			_offsetProviders.Add(offsetProvider);
+		}
+
+		/// <summary>
+		/// Deregisters an offset provider. Restores the baseline and self-destructs
+		/// when no providers remain.
+		/// </summary>
+		public void Deregister(System.Func<Vector3> offsetProvider)
+		{
+			_offsetProviders.Remove(offsetProvider);
+			if (_offsetProviders.Count == 0)
+			{
+				transform.localPosition = _baseline;
+				Destroy(this);
+			}
+		}
+
+		private void LateUpdate()
+		{
+			var combined = Vector3.zero;
+			foreach (var provider in _offsetProviders)
+				combined += provider();
+			transform.localPosition = _baseline + combined;
+		}
+
+		private void OnDisable()
+		{
+			transform.localPosition = _baseline;
 		}
 	}
 }
