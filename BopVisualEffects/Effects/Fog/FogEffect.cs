@@ -1,11 +1,12 @@
 using System.Collections.Generic;
 using BopVisualEffects.Core;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace BopVisualEffects.Effects.Fog;
 
 /// <summary>
-/// Effect definition for a scene fog overlay that fades in and out over its duration.
+/// Effect definition for a 2D-compatible fog overlay that rises from the bottom of the screen.
 /// </summary>
 public sealed class FogEffect : IVisualEffectDefinition
 {
@@ -16,7 +17,7 @@ public sealed class FogEffect : IVisualEffectDefinition
 	public string DisplayName => "Fog";
 
 	/// <inheritdoc />
-	public string Description => "Gradually fades a scene fog effect in and back out for atmosphere and visual depth.";
+	public string Description => "Draws a ground fog overlay that rises from the bottom of the screen, fading in and out over its duration.";
 
 	/// <inheritdoc />
 	public MixtapeEventTemplate CreateTemplate(string pluginGuid)
@@ -31,7 +32,8 @@ public sealed class FogEffect : IVisualEffectDefinition
 				["r"] = 0.8f,
 				["g"] = 0.8f,
 				["b"] = 0.9f,
-				["density"] = 0.03f
+				["alpha"] = 0.6f,
+				["height"] = 0.5f
 			}
 		};
 	}
@@ -44,7 +46,8 @@ public sealed class FogEffect : IVisualEffectDefinition
 		var r = entity.GetFloat("r");
 		var g = entity.GetFloat("g");
 		var b = entity.GetFloat("b");
-		var density = entity.GetFloat("density");
+		var alpha = entity.GetFloat("alpha");
+		var height = entity.GetFloat("height");
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
 
@@ -55,89 +58,39 @@ public sealed class FogEffect : IVisualEffectDefinition
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<FogRunner>(runner =>
-				runner.Initialize(loader.jukebox, startBeat, endBeat, r, g, b, density));
-		}
-	}
-
-	/// <summary>
-	/// Manages shared RenderSettings fog state across potentially overlapping FogRunner instances.
-	/// Saves the pre-effect fog state when the first runner activates and restores it only when the last runner deactivates.
-	/// </summary>
-	private static class FogStateController
-	{
-		private static int _activeCount;
-		private static bool _savedFog;
-		private static Color _savedFogColor;
-		private static float _savedFogDensity;
-		private static FogMode _savedFogMode;
-
-		/// <summary>
-		/// Called by a FogRunner on activation. Saves pre-effect fog state on the first activation.
-		/// </summary>
-		public static void Activate()
-		{
-			if (_activeCount == 0)
-			{
-				_savedFog = RenderSettings.fog;
-				_savedFogColor = RenderSettings.fogColor;
-				_savedFogDensity = RenderSettings.fogDensity;
-				_savedFogMode = RenderSettings.fogMode;
-			}
-
-			_activeCount++;
-		}
-
-		/// <summary>
-		/// Called by a FogRunner on deactivation. Restores pre-effect fog state when the last runner deactivates.
-		/// </summary>
-		public static void Deactivate()
-		{
-			if (_activeCount <= 0)
-				return;
-
-			_activeCount--;
-			if (_activeCount == 0)
-			{
-				RenderSettings.fog = _savedFog;
-				RenderSettings.fogColor = _savedFogColor;
-				RenderSettings.fogDensity = _savedFogDensity;
-				RenderSettings.fogMode = _savedFogMode;
-			}
+			runner.Initialize(loader, loader.jukebox, startBeat, endBeat, r, g, b, alpha, height));
 		}
 	}
 
 	private sealed class FogRunner : MonoBehaviour
 	{
+		private bool _initialized;
 		private float _r;
 		private float _g;
 		private float _b;
-		private float _maxDensity;
+		private float _maxAlpha;
+		private float _height;
 		private float _startBeat;
 		private float _endBeat;
+		private MixtapeLoaderCustom? _loader;
 		private JukeboxScript? _jukebox;
-		private bool _activated;
+		private FogOverlay? _overlay;
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(JukeboxScript? jukebox, float startBeat, float endBeat, float r, float g, float b, float density)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float r, float g, float b, float alpha, float height)
 		{
+			_loader = loader;
 			_jukebox = jukebox;
 			_startBeat = startBeat;
 			_endBeat = endBeat;
 			_r = Mathf.Clamp01(r);
 			_g = Mathf.Clamp01(g);
 			_b = Mathf.Clamp01(b);
-			_maxDensity = Mathf.Max(0f, density);
-
-			// Register with the shared controller before touching RenderSettings.
-			FogStateController.Activate();
-			_activated = true;
-
-			RenderSettings.fog = true;
-			RenderSettings.fogMode = FogMode.ExponentialSquared;
-			RenderSettings.fogColor = new Color(_r, _g, _b);
-			RenderSettings.fogDensity = 0f;
+			_maxAlpha = Mathf.Clamp01(alpha);
+			_height = Mathf.Clamp01(height);
+			InitializeOverlay();
 		}
 
 		/// <summary>
@@ -145,7 +98,7 @@ public sealed class FogEffect : IVisualEffectDefinition
 		/// </summary>
 		public void Stop()
 		{
-			ReleaseFog();
+			RemoveOverlay();
 			Destroy(this);
 		}
 
@@ -155,6 +108,13 @@ public sealed class FogEffect : IVisualEffectDefinition
 			{
 				Stop();
 				return;
+			}
+
+			if (!_initialized)
+			{
+				InitializeOverlay();
+				if (!_initialized)
+					return;
 			}
 
 			var currentBeat = _jukebox.CurrentBeat;
@@ -174,21 +134,106 @@ public sealed class FogEffect : IVisualEffectDefinition
 			else
 				envelope = 1f;
 
-			RenderSettings.fogDensity = _maxDensity * envelope;
+			_overlay?.SetParams(_r, _g, _b, _maxAlpha * envelope, _height);
 		}
 
 		private void OnDisable()
 		{
-			ReleaseFog();
+			RemoveOverlay();
 		}
 
-		private void ReleaseFog()
+		private void InitializeOverlay()
 		{
-			if (!_activated)
+			Camera? camera = EffectRuntimeController.ResolveEffectCamera(_loader);
+			if (camera is null)
 				return;
 
-			_activated = false;
-			FogStateController.Deactivate();
+			_overlay = camera.gameObject.AddComponent<FogOverlay>();
+			_overlay.SetParams(_r, _g, _b, _maxAlpha, _height);
+			_initialized = true;
+		}
+
+		private void RemoveOverlay()
+		{
+			if (_overlay is not null)
+			{
+				Destroy(_overlay);
+				_overlay = null;
+			}
+		}
+	}
+
+	/// <summary>
+	/// Draws a ground fog gradient in OnPostRender — opaque at the bottom, fading to transparent
+	/// at the specified height. Works in 2D and 3D scenes. Must be attached to a Camera's GameObject.
+	/// </summary>
+	private sealed class FogOverlay : MonoBehaviour
+	{
+		private static Material? _material;
+		private float _r;
+		private float _g;
+		private float _b;
+		private float _alpha;
+		private float _height;
+
+		/// <summary>
+		/// Updates the overlay parameters.
+		/// </summary>
+		public void SetParams(float r, float g, float b, float alpha, float height)
+		{
+			_r = r;
+			_g = g;
+			_b = b;
+			_alpha = alpha;
+			_height = height;
+		}
+
+		private static Material? GetMaterial()
+		{
+			if (!_material)
+			{
+				var shader = Shader.Find("Hidden/Internal-Colored");
+				if (shader is null)
+					return null;
+
+				_material = new Material(shader) { hideFlags = HideFlags.HideAndDontSave };
+				_material.SetInt("_SrcBlend", (int)BlendMode.SrcAlpha);
+				_material.SetInt("_DstBlend", (int)BlendMode.OneMinusSrcAlpha);
+				_material.SetInt("_Cull", (int)CullMode.Off);
+				_material.SetInt("_ZWrite", 0);
+			}
+
+			return _material;
+		}
+
+		// Unity calls this on the camera's GameObject after it finishes rendering the scene.
+		private void OnPostRender()
+		{
+			if (_alpha <= 0f || _height <= 0f)
+				return;
+
+			var mat = GetMaterial();
+			if (mat is null)
+				return;
+
+			mat.SetPass(0);
+
+			// Ground fog: opaque at y=0 (bottom), fades to transparent at y=_height.
+			var fogColor = new Color(_r, _g, _b, _alpha);
+			var clear = new Color(_r, _g, _b, 0f);
+
+			GL.PushMatrix();
+			GL.LoadOrtho();
+			GL.Begin(GL.QUADS);
+
+			// Bottom-left → top-left → top-right → bottom-right
+			GL.Color(fogColor); GL.Vertex3(0f, 0f, 0f);
+			GL.Color(clear); GL.Vertex3(0f, _height, 0f);
+			GL.Color(clear); GL.Vertex3(1f, _height, 0f);
+			GL.Color(fogColor); GL.Vertex3(1f, 0f, 0f);
+
+			GL.End();
+			GL.PopMatrix();
 		}
 	}
 }

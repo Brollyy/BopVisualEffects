@@ -30,7 +30,8 @@ public sealed class ScreenNoiseEffect : IVisualEffectDefinition
 			properties = new Dictionary<string, object>
 			{
 				["alpha"] = 0.5f,
-				["count"] = 400.0f
+				["count"] = 400.0f,
+				["size"] = 0.01f
 			}
 		};
 	}
@@ -42,6 +43,7 @@ public sealed class ScreenNoiseEffect : IVisualEffectDefinition
 		var durationBeats = Mathf.Max(0.01f, entity.length);
 		var alpha = entity.GetFloat("alpha");
 		var count = entity.GetFloat("count");
+		var size = entity.GetFloat("size");
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
 
@@ -52,7 +54,7 @@ public sealed class ScreenNoiseEffect : IVisualEffectDefinition
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<ScreenNoiseRunner>(runner =>
-				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, alpha, count));
+				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, alpha, count, size));
 		}
 	}
 
@@ -61,6 +63,7 @@ public sealed class ScreenNoiseEffect : IVisualEffectDefinition
 		private bool _initialized;
 		private float _alpha;
 		private int _count;
+		private float _size;
 		private float _startBeat;
 		private float _endBeat;
 		private MixtapeLoaderCustom? _loader;
@@ -70,7 +73,7 @@ public sealed class ScreenNoiseEffect : IVisualEffectDefinition
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float alpha, float count)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float alpha, float count, float size)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
@@ -78,6 +81,7 @@ public sealed class ScreenNoiseEffect : IVisualEffectDefinition
 			_endBeat = endBeat;
 			_alpha = Mathf.Clamp01(alpha);
 			_count = Mathf.Clamp(Mathf.RoundToInt(count), 10, 2000);
+			_size = Mathf.Clamp(size, 0.001f, 0.1f);
 			InitializeOverlay();
 		}
 
@@ -122,7 +126,7 @@ public sealed class ScreenNoiseEffect : IVisualEffectDefinition
 			else
 				envelope = 1f;
 
-			_overlay?.SetParams(_alpha * envelope, _count);
+			_overlay?.SetParams(_alpha * envelope, _count, _size);
 		}
 
 		private void OnDisable()
@@ -137,7 +141,7 @@ public sealed class ScreenNoiseEffect : IVisualEffectDefinition
 				return;
 
 			_overlay = camera.gameObject.AddComponent<ScreenNoiseOverlay>();
-			_overlay.SetParams(_alpha, _count);
+			_overlay.SetParams(_alpha, _count, _size);
 			_initialized = true;
 		}
 
@@ -156,11 +160,10 @@ public sealed class ScreenNoiseEffect : IVisualEffectDefinition
 	/// </summary>
 	private sealed class ScreenNoiseOverlay : MonoBehaviour
 	{
-		private const float SpeckSize = 0.007f;
-
 		private static Material? _material;
 		private float _alpha;
 		private int _count;
+		private float _size;
 
 		// Local PRNG to avoid perturbing the global UnityEngine.Random state.
 		private readonly System.Random _rng = new System.Random();
@@ -168,10 +171,11 @@ public sealed class ScreenNoiseEffect : IVisualEffectDefinition
 		/// <summary>
 		/// Updates the overlay parameters.
 		/// </summary>
-		public void SetParams(float alpha, int count)
+		public void SetParams(float alpha, int count, float size)
 		{
 			_alpha = alpha;
 			_count = count;
+			_size = size;
 		}
 
 		private static Material? GetMaterial()
@@ -216,9 +220,9 @@ public sealed class ScreenNoiseEffect : IVisualEffectDefinition
 
 				GL.Color(new Color(brightness, brightness, brightness, a));
 				GL.Vertex3(x, y, 0f);
-				GL.Vertex3(x, y + SpeckSize, 0f);
-				GL.Vertex3(x + SpeckSize, y + SpeckSize, 0f);
-				GL.Vertex3(x + SpeckSize, y, 0f);
+				GL.Vertex3(x, y + _size, 0f);
+				GL.Vertex3(x + _size, y + _size, 0f);
+				GL.Vertex3(x + _size, y, 0f);
 			}
 
 			GL.End();

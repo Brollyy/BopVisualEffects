@@ -30,7 +30,8 @@ public sealed class ScanlinesEffect : IVisualEffectDefinition
 			properties = new Dictionary<string, object>
 			{
 				["alpha"] = 0.35f,
-				["count"] = 60.0f
+				["count"] = 60.0f,
+				["scroll_speed"] = 0.0f
 			}
 		};
 	}
@@ -42,6 +43,7 @@ public sealed class ScanlinesEffect : IVisualEffectDefinition
 		var durationBeats = Mathf.Max(0.01f, entity.length);
 		var alpha = entity.GetFloat("alpha");
 		var count = entity.GetFloat("count");
+		var scrollSpeed = entity.GetFloat("scroll_speed");
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
 
@@ -52,7 +54,7 @@ public sealed class ScanlinesEffect : IVisualEffectDefinition
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<ScanlinesRunner>(runner =>
-				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, alpha, count));
+				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, alpha, count, scrollSpeed));
 		}
 	}
 
@@ -61,6 +63,7 @@ public sealed class ScanlinesEffect : IVisualEffectDefinition
 		private bool _initialized;
 		private float _alpha;
 		private int _count;
+		private float _scrollSpeed;
 		private float _startBeat;
 		private float _endBeat;
 		private MixtapeLoaderCustom? _loader;
@@ -70,7 +73,7 @@ public sealed class ScanlinesEffect : IVisualEffectDefinition
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float alpha, float count)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float alpha, float count, float scrollSpeed)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
@@ -78,6 +81,7 @@ public sealed class ScanlinesEffect : IVisualEffectDefinition
 			_endBeat = endBeat;
 			_alpha = Mathf.Clamp01(alpha);
 			_count = Mathf.Clamp(Mathf.RoundToInt(count), 4, 2000);
+			_scrollSpeed = scrollSpeed;
 			InitializeOverlay();
 		}
 
@@ -122,7 +126,7 @@ public sealed class ScanlinesEffect : IVisualEffectDefinition
 			else
 				envelope = 1f;
 
-			_overlay?.SetParams(_alpha * envelope, _count);
+			_overlay?.SetParams(_alpha * envelope, _count, _scrollSpeed);
 		}
 
 		private void OnDisable()
@@ -137,7 +141,7 @@ public sealed class ScanlinesEffect : IVisualEffectDefinition
 				return;
 
 			_overlay = camera.gameObject.AddComponent<ScanlinesOverlay>();
-			_overlay.SetParams(_alpha, _count);
+			_overlay.SetParams(_alpha, _count, _scrollSpeed);
 			_initialized = true;
 		}
 
@@ -159,14 +163,16 @@ public sealed class ScanlinesEffect : IVisualEffectDefinition
 		private static Material? _material;
 		private float _alpha;
 		private int _count;
+		private float _scrollSpeed;
 
 		/// <summary>
 		/// Updates the overlay parameters.
 		/// </summary>
-		public void SetParams(float alpha, int count)
+		public void SetParams(float alpha, int count, float scrollSpeed)
 		{
 			_alpha = alpha;
 			_count = count;
+			_scrollSpeed = scrollSpeed;
 		}
 
 		private static Material? GetMaterial()
@@ -200,15 +206,18 @@ public sealed class ScanlinesEffect : IVisualEffectDefinition
 			mat.SetPass(0);
 
 			// Each cell height is 1/count. The scan line occupies the lower half of each cell.
+			// scroll_speed shifts lines upward over time (wraps within one cell height).
 			var lineColor = new Color(0f, 0f, 0f, _alpha);
-			var lineH = 0.5f / _count;
+			var cellH = 1f / _count;
+			var lineH = cellH * 0.5f;
+			var scrollOffset = (_scrollSpeed != 0f) ? (Time.time * _scrollSpeed * cellH) % cellH : 0f;
 
 			GL.PushMatrix();
 			GL.LoadOrtho();
 			GL.Begin(GL.QUADS);
 			for (var i = 0; i < _count; i++)
 			{
-				var y0 = (float)i / _count;
+				var y0 = ((float)i / _count + scrollOffset) % 1f;
 				var y1 = y0 + lineH;
 				GL.Color(lineColor);
 				GL.Vertex3(0f, y0, 0f);

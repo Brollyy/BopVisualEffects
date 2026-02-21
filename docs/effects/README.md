@@ -35,40 +35,6 @@ Briefly tilts the camera on its Z-axis with a smooth swing arc. Great for expres
 
 [Watch video preview](camera-tilt/demo.mp4)
 
-## Screen Flash
-
-**DisplayName:** `Screen Flash`
-
-Draws a brief full-screen colored overlay that fades out to zero opacity over the event duration. Great for hits, beat drops, or any moment requiring a punchy visual accent.
-
-**Properties**
-- `r`, `g`, `b`: Color of the flash (0–1 each; default `1, 1, 1` — white).
-- `alpha`: Maximum opacity of the flash at the start (0–1; default `0.8`).
-- `length` (event length in editor): How long the flash lasts, in beats. This event is resizable in the timeline.
-
-**Preview media**
-
-![Screen Flash preview](screen-flash/preview.gif)
-
-[Watch video preview](screen-flash/demo.mp4)
-
-## Fog
-
-**DisplayName:** `Fog`
-
-Enables Unity scene fog that fades in over the first 20% of the event, holds, then fades out over the last 20%. Adds a dreamy, atmospheric depth to musical passages.
-
-**Properties**
-- `r`, `g`, `b`: Color of the fog (0–1 each; default `0.8, 0.8, 0.9` — pale blue-grey).
-- `density`: Maximum fog density (default `0.03`).
-- `length` (event length in editor): How long the fog lasts, in beats. This event is resizable in the timeline.
-
-**Preview media**
-
-![Fog preview](fog/preview.gif)
-
-[Watch video preview](fog/demo.mp4)
-
 ## Zoom Pulse
 
 **DisplayName:** `Zoom Pulse`
@@ -85,15 +51,66 @@ Rapidly zooms the camera in and then eases it back out, creating a punchy "push-
 
 [Watch video preview](zoom-pulse/demo.mp4)
 
+## Zoom In
+
+**DisplayName:** `Zoom In`
+
+Eases the camera smoothly into a zoomed-in view, holds at the target level, then eases back out. Great for building tension or drawing attention to a musical phrase.
+
+**Properties**
+- `intensity`: How far to zoom in, as a fraction of the camera's base size (e.g. `0.2` = 20% closer). Clamped to `[0, 0.99]`.
+- `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
+
+**Preview media**
+
+![Zoom In preview](zoom-in/preview.gif)
+
+[Watch video preview](zoom-in/demo.mp4)
+
+## Zoom Out
+
+**DisplayName:** `Zoom Out`
+
+Eases the camera smoothly out to a wider view, holds, then eases back in. Great for revealing the scene or creating a sense of space.
+
+**Properties**
+- `intensity`: How far to zoom out, as a fraction of the camera's base size (e.g. `0.2` = 20% further out).
+- `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
+
+**Preview media**
+
+![Zoom Out preview](zoom-out/preview.gif)
+
+[Watch video preview](zoom-out/demo.mp4)
+
+## Fog
+
+**DisplayName:** `Fog`
+
+Draws a ground fog gradient overlay — opaque at the bottom of the screen, fading to transparent at the specified height. Works in both 2D and 3D scenes. Fades in and out smoothly.
+
+**Properties**
+- `r`, `g`, `b`: Fog color (0–1 each; default `0.8, 0.8, 0.9` — pale blue-grey).
+- `alpha`: Maximum opacity at the bottom of the screen (0–1; default `0.6`).
+- `height`: Normalized screen height at which the fog fully fades to transparent (0–1; default `0.5`).
+- `length` (event length in editor): How long the fog lasts, in beats. This event is resizable in the timeline.
+
+**Preview media**
+
+![Fog preview](fog/preview.gif)
+
+[Watch video preview](fog/demo.mp4)
+
 ## Scanlines
 
 **DisplayName:** `Scanlines`
 
-Draws horizontal CRT-style scan lines over the screen for a retro 8-bit aesthetic. Fades in and out smoothly over the event duration.
+Draws horizontal CRT-style scan lines over the screen for a retro 8-bit aesthetic. Can optionally scroll up or down continuously. Fades in and out smoothly.
 
 **Properties**
 - `alpha`: Darkness of each scan line (0–1; default `0.35`).
-- `count`: Number of scan lines (default `60`).
+- `count`: Number of scan lines (default `60`, clamped 4–2000).
+- `scroll_speed`: Speed at which lines scroll upward, in cells per second (default `0` = static; negative = scroll downward).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
 
 **Preview media**
@@ -106,11 +123,11 @@ Draws horizontal CRT-style scan lines over the screen for a retro 8-bit aestheti
 
 **DisplayName:** `Vignette`
 
-Darkens the screen edges with a smooth gradient frame for a dramatic or horror atmosphere. Fades in and out smoothly.
+Darkens the screen edges with a smooth radial/elliptical gradient using a 32-segment triangle fan. The inner clear zone is aspect-ratio-corrected to appear circular on screen. Fades in and out smoothly.
 
 **Properties**
 - `alpha`: Darkness of the edge (0–1; default `0.7`).
-- `size`: How far the darkened edge extends inward as a screen fraction (0–0.5; default `0.3`).
+- `size`: How far the darkening extends inward as a fraction of screen half-height (0–0.5; default `0.1`).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
 
 **Preview media**
@@ -156,11 +173,12 @@ Adds cinematic black bars at the top and bottom of the screen for a dramatic wid
 
 **DisplayName:** `Screen Noise`
 
-Draws animated TV static noise specks over the screen for a glitchy or horror atmosphere. The noise changes every frame for a lively static look.
+Draws animated TV static noise specks over the screen for a glitchy atmosphere. The noise changes every frame. Each speck uses an independent local RNG so global gameplay randomness is unaffected.
 
 **Properties**
 - `alpha`: Maximum opacity of the noise specks (0–1; default `0.5`).
-- `count`: Number of noise specks drawn per frame (default `400`).
+- `count`: Number of noise specks drawn per frame (10–2000; default `400`).
+- `size`: Physical size of each speck in normalised screen coordinates (0.001–0.1; default `0.01`).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
 
 **Preview media**
@@ -173,11 +191,10 @@ Draws animated TV static noise specks over the screen for a glitchy or horror at
 
 **DisplayName:** `Pixel Grid`
 
-Draws a full 2D pixel cell grid over the screen — both horizontal and vertical dividers between pixel-sized cells — to simulate the chunky, separated-pixel look of retro 8-bit games. Distinct from Scanlines (horizontal only).
+Pixelates the screen by downsampling the camera's rendered output to a low-resolution render texture and upsampling it with nearest-neighbour (point) filtering — the same method as retro 8-bit displays. Every pixel block averages the colours within it, giving a genuine pixelated look. The block size ramps up and down smoothly at the event boundaries.
 
 **Properties**
-- `alpha`: Darkness of the grid lines (0–1; default `0.4`).
-- `pixel_size`: Width/height of each simulated pixel as a normalized screen fraction (default `0.025`; larger values = fewer, bigger pixels).
+- `pixel_size`: Size of each pixel block in screen pixels (2–64; default `4`). Larger values produce a more pronounced 8-bit look.
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
 
 **Preview media**
@@ -185,22 +202,3 @@ Draws a full 2D pixel cell grid over the screen — both horizontal and vertical
 ![Pixel Grid preview](pixel-grid/preview.gif)
 
 [Watch video preview](pixel-grid/demo.mp4)
-
-## Horror
-
-**DisplayName:** `Horror`
-
-Draws blood-red gradient vignette panels at the screen edges that slowly throb using a sinusoidal pulse, evoking a creeping sense of dread. Distinct from the generic Vignette (black edges) by its blood-red color and animated pulsing.
-
-**Properties**
-- `alpha`: Maximum opacity of the blood-red edge (0–1; default `0.75`).
-- `size`: How far the red edge extends inward as a screen fraction (0–0.5; default `0.35`).
-- `pulse_rate`: Number of pulse cycles per beat (default `0.5` — one throb every 2 beats).
-- `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
-
-**Preview media**
-
-![Horror preview](horror/preview.gif)
-
-[Watch video preview](horror/demo.mp4)
-

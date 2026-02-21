@@ -1,13 +1,13 @@
 using System.Collections.Generic;
 using BopVisualEffects.Core;
 using UnityEngine;
-using UnityEngine.Rendering;
 
 namespace BopVisualEffects.Effects.PixelGrid;
 
 /// <summary>
-/// Effect definition for a retro 8-bit pixel grid overlay.
-/// Draws thin dark lines between pixel cells (horizontal and vertical) to simulate large pixel boundaries.
+/// Effect definition for a true retro 8-bit pixelation effect.
+/// Downsamples the rendered frame to a low resolution and upsamples it with nearest-neighbour filtering,
+/// averaging all colours within each pixel block — producing a genuine pixelated look.
 /// </summary>
 public sealed class PixelGridEffect : IVisualEffectDefinition
 {
@@ -18,7 +18,7 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 	public string DisplayName => "Pixel Grid";
 
 	/// <inheritdoc />
-	public string Description => "Draws a full pixel grid over the screen to simulate the chunky pixel look of retro 8-bit games.";
+	public string Description => "Pixelates the screen by averaging pixel blocks, simulating the chunky look of retro 8-bit games.";
 
 	/// <inheritdoc />
 	public MixtapeEventTemplate CreateTemplate(string pluginGuid)
@@ -30,8 +30,7 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 			resizable = true,
 			properties = new Dictionary<string, object>
 			{
-				["alpha"] = 0.4f,
-				["pixel_size"] = 0.025f
+				["pixel_size"] = 4.0f
 			}
 		};
 	}
@@ -41,7 +40,6 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 	{
 		var log = ClassLogger.GetForClass<PixelGridEffect>();
 		var durationBeats = Mathf.Max(0.01f, entity.length);
-		var alpha = entity.GetFloat("alpha");
 		var pixelSize = entity.GetFloat("pixel_size");
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
@@ -53,15 +51,14 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<PixelGridRunner>(runner =>
-				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, alpha, pixelSize));
+			runner.Initialize(loader, loader.jukebox, startBeat, endBeat, pixelSize));
 		}
 	}
 
 	private sealed class PixelGridRunner : MonoBehaviour
 	{
 		private bool _initialized;
-		private float _alpha;
-		private float _pixelSize;
+		private int _pixelSize;
 		private float _startBeat;
 		private float _endBeat;
 		private MixtapeLoaderCustom? _loader;
@@ -71,14 +68,13 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float alpha, float pixelSize)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float pixelSize)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
 			_startBeat = startBeat;
 			_endBeat = endBeat;
-			_alpha = Mathf.Clamp01(alpha);
-			_pixelSize = Mathf.Clamp(pixelSize, 0.005f, 0.25f);
+			_pixelSize = Mathf.Clamp(Mathf.RoundToInt(pixelSize), 2, 64);
 			InitializeOverlay();
 		}
 
@@ -113,7 +109,8 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 				return;
 			}
 
-			// Fade in over first 15%, hold, fade out over last 15%.
+			// Ramp block size up over first 15%, hold, ramp down over last 15%.
+			// block_size=1 means no pixelation; ramping from 1 → _pixelSize gives a "zooming into pixels" look.
 			var progress = Mathf.InverseLerp(_startBeat, _endBeat, currentBeat);
 			float envelope;
 			if (progress < 0.15f)
@@ -123,7 +120,8 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 			else
 				envelope = 1f;
 
-			_overlay?.SetParams(_alpha * envelope, _pixelSize);
+			var currentBlockSize = Mathf.Max(1, Mathf.RoundToInt(Mathf.Lerp(1f, _pixelSize, envelope)));
+			_overlay?.SetBlockSize(currentBlockSize);
 		}
 
 		private void OnDisable()
@@ -138,7 +136,7 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 				return;
 
 			_overlay = camera.gameObject.AddComponent<PixelGridOverlay>();
-			_overlay.SetParams(_alpha, _pixelSize);
+			_overlay.SetBlockSize(_pixelSize);
 			_initialized = true;
 		}
 
@@ -153,91 +151,42 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 	}
 
 	/// <summary>
-	/// Draws a 2D pixel cell grid (horizontal + vertical dividers) in OnPostRender.
+	/// Pixelates the camera output via OnRenderImage: downsamples to a low-resolution RenderTexture
+	/// with nearest-neighbour filtering, then upsamples back — averaging all colours within each block.
 	/// Must be attached to a Camera's GameObject.
 	/// </summary>
 	private sealed class PixelGridOverlay : MonoBehaviour
 	{
-		// The grid line thickness as a fraction of the cell size.
-		private const float LineThicknessFraction = 0.15f;
-
-		private static Material? _material;
-		private float _alpha;
-		private float _pixelSize;
+		private int _blockSize = 1;
 
 		/// <summary>
-		/// Updates the overlay parameters.
+		/// Sets the pixel block size in screen pixels.
 		/// </summary>
-		public void SetParams(float alpha, float pixelSize)
+		public void SetBlockSize(int blockSize)
 		{
-			_alpha = alpha;
-			_pixelSize = pixelSize;
+			_blockSize = blockSize;
 		}
 
-		private static Material? GetMaterial()
+		// Unity calls this with the camera's rendered image as source.
+		private void OnRenderImage(RenderTexture src, RenderTexture dest)
 		{
-			if (!_material)
+			if (_blockSize <= 1 || src is null)
 			{
-				var shader = Shader.Find("Hidden/Internal-Colored");
-				if (shader is null)
-					return null;
-
-				_material = new Material(shader) { hideFlags = HideFlags.HideAndDontSave };
-				_material.SetInt("_SrcBlend", (int)BlendMode.SrcAlpha);
-				_material.SetInt("_DstBlend", (int)BlendMode.OneMinusSrcAlpha);
-				_material.SetInt("_Cull", (int)CullMode.Off);
-				_material.SetInt("_ZWrite", 0);
-			}
-
-			return _material;
-		}
-
-		// Unity calls this on the camera's GameObject after it finishes rendering the scene.
-		private void OnPostRender()
-		{
-			if (_alpha <= 0f || _pixelSize <= 0f)
+				Graphics.Blit(src, dest);
 				return;
-
-			var mat = GetMaterial();
-			if (mat is null)
-				return;
-
-			mat.SetPass(0);
-
-			var lineColor = new Color(0f, 0f, 0f, _alpha);
-			var lineThickness = _pixelSize * LineThicknessFraction;
-
-			// Number of cells along each axis.
-			var cellsX = Mathf.CeilToInt(1f / _pixelSize);
-			var cellsY = Mathf.CeilToInt(1f / _pixelSize);
-
-			GL.PushMatrix();
-			GL.LoadOrtho();
-			GL.Begin(GL.QUADS);
-			GL.Color(lineColor);
-
-			// Horizontal dividers between rows.
-			for (var row = 1; row < cellsY; row++)
-			{
-				var y = row * _pixelSize;
-				GL.Vertex3(0f, y, 0f);
-				GL.Vertex3(0f, y + lineThickness, 0f);
-				GL.Vertex3(1f, y + lineThickness, 0f);
-				GL.Vertex3(1f, y, 0f);
 			}
 
-			// Vertical dividers between columns.
-			for (var col = 1; col < cellsX; col++)
-			{
-				var x = col * _pixelSize;
-				GL.Vertex3(x, 0f, 0f);
-				GL.Vertex3(x, 1f, 0f);
-				GL.Vertex3(x + lineThickness, 1f, 0f);
-				GL.Vertex3(x + lineThickness, 0f, 0f);
-			}
+			// Downsample to a low-resolution RT, then upsample with point filtering.
+			var lowW = Mathf.Max(1, src.width / _blockSize);
+			var lowH = Mathf.Max(1, src.height / _blockSize);
 
-			GL.End();
-			GL.PopMatrix();
+			var lowRes = RenderTexture.GetTemporary(lowW, lowH);
+			lowRes.filterMode = FilterMode.Point;
+
+			Graphics.Blit(src, lowRes);
+			Graphics.Blit(lowRes, dest);
+
+			RenderTexture.ReleaseTemporary(lowRes);
 		}
 	}
 }

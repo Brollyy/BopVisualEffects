@@ -30,7 +30,7 @@ public sealed class VignetteEffect : IVisualEffectDefinition
 			properties = new Dictionary<string, object>
 			{
 				["alpha"] = 0.7f,
-				["size"] = 0.3f
+				["size"] = 0.1f
 			}
 		};
 	}
@@ -152,10 +152,14 @@ public sealed class VignetteEffect : IVisualEffectDefinition
 	}
 
 	/// <summary>
-	/// Draws a dark gradient vignette at the screen edges in OnPostRender. Must be attached to a Camera's GameObject.
+	/// Draws a radial/elliptical vignette in OnPostRender using a 32-segment triangle fan.
+	/// The inner clear zone is an ellipse (aspect-corrected to appear circular on screen).
+	/// Must be attached to a Camera's GameObject.
 	/// </summary>
 	private sealed class VignetteOverlay : MonoBehaviour
 	{
+		private const int Segments = 32;
+
 		private static Material? _material;
 		private float _alpha;
 		private float _size;
@@ -187,6 +191,17 @@ public sealed class VignetteEffect : IVisualEffectDefinition
 			return _material;
 		}
 
+		// Returns the screen-boundary intersection point from the center (0.5, 0.5)
+		// in the given direction (dx, dy).
+		private static void ScreenBoundary(float dx, float dy, out float bx, out float by)
+		{
+			var tx = (dx != 0f) ? 0.5f / Mathf.Abs(dx) : float.MaxValue;
+			var ty = (dy != 0f) ? 0.5f / Mathf.Abs(dy) : float.MaxValue;
+			var t = Mathf.Min(tx, ty);
+			bx = 0.5f + t * dx;
+			by = 0.5f + t * dy;
+		}
+
 		// Unity calls this on the camera's GameObject after it finishes rendering the scene.
 		private void OnPostRender()
 		{
@@ -197,39 +212,55 @@ public sealed class VignetteEffect : IVisualEffectDefinition
 			if (mat is null)
 				return;
 
-			mat.SetPass(0);
+			// Get the camera aspect ratio to make the inner clear zone look circular on screen.
+			var cam = GetComponent<Camera>();
+			var aspect = (cam != null) ? cam.aspect : (16f / 9f);
+
+			// Inner clear ellipse semi-axes.
+			// ry = (0.5 - _size): fraction of half screen height that remains transparent.
+			// rx = ry / aspect: scaled so the ellipse looks like a circle on screen.
+			var innerRy = Mathf.Max(0f, 0.5f - _size);
+			var innerRx = (aspect > 0f) ? innerRy / aspect : innerRy;
 
 			var dark = new Color(0f, 0f, 0f, _alpha);
 			var clear = new Color(0f, 0f, 0f, 0f);
-			var s = _size;
+			var step = 2f * Mathf.PI / Segments;
+
+			mat.SetPass(0);
 
 			GL.PushMatrix();
 			GL.LoadOrtho();
-			GL.Begin(GL.QUADS);
+			GL.Begin(GL.TRIANGLES);
 
-			// Left panel: gradient from dark (x=0) to transparent (x=s).
-			GL.Color(dark); GL.Vertex3(0f, 0f, 0f);
-			GL.Color(dark); GL.Vertex3(0f, 1f, 0f);
-			GL.Color(clear); GL.Vertex3(s, 1f, 0f);
-			GL.Color(clear); GL.Vertex3(s, 0f, 0f);
+			for (var i = 0; i < Segments; i++)
+			{
+				var a0 = i * step;
+				var a1 = (i + 1) * step;
+				var cos0 = Mathf.Cos(a0);
+				var sin0 = Mathf.Sin(a0);
+				var cos1 = Mathf.Cos(a1);
+				var sin1 = Mathf.Sin(a1);
 
-			// Right panel: gradient from transparent (x=1-s) to dark (x=1).
-			GL.Color(clear); GL.Vertex3(1f - s, 0f, 0f);
-			GL.Color(clear); GL.Vertex3(1f - s, 1f, 0f);
-			GL.Color(dark); GL.Vertex3(1f, 1f, 0f);
-			GL.Color(dark); GL.Vertex3(1f, 0f, 0f);
+				// Inner ellipse points (transparent edge of the clear zone).
+				var ix0 = 0.5f + cos0 * innerRx;
+				var iy0 = 0.5f + sin0 * innerRy;
+				var ix1 = 0.5f + cos1 * innerRx;
+				var iy1 = 0.5f + sin1 * innerRy;
 
-			// Bottom panel: gradient from dark (y=0) to transparent (y=s).
-			GL.Color(dark); GL.Vertex3(0f, 0f, 0f);
-			GL.Color(clear); GL.Vertex3(0f, s, 0f);
-			GL.Color(clear); GL.Vertex3(1f, s, 0f);
-			GL.Color(dark); GL.Vertex3(1f, 0f, 0f);
+				// Outer points extended from center to the screen boundary.
+				ScreenBoundary(cos0, sin0, out var ox0, out var oy0);
+				ScreenBoundary(cos1, sin1, out var ox1, out var oy1);
 
-			// Top panel: gradient from transparent (y=1-s) to dark (y=1).
-			GL.Color(clear); GL.Vertex3(0f, 1f - s, 0f);
-			GL.Color(dark); GL.Vertex3(0f, 1f, 0f);
-			GL.Color(dark); GL.Vertex3(1f, 1f, 0f);
-			GL.Color(clear); GL.Vertex3(1f, 1f - s, 0f);
+				// Triangle 1: inner0 (clear) → outer0 (dark) → outer1 (dark)
+				GL.Color(clear); GL.Vertex3(ix0, iy0, 0f);
+				GL.Color(dark); GL.Vertex3(ox0, oy0, 0f);
+				GL.Color(dark); GL.Vertex3(ox1, oy1, 0f);
+
+				// Triangle 2: inner0 (clear) → outer1 (dark) → inner1 (clear)
+				GL.Color(clear); GL.Vertex3(ix0, iy0, 0f);
+				GL.Color(dark); GL.Vertex3(ox1, oy1, 0f);
+				GL.Color(clear); GL.Vertex3(ix1, iy1, 0f);
+			}
 
 			GL.End();
 			GL.PopMatrix();
