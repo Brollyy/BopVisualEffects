@@ -94,7 +94,7 @@ jobs:
           dotnet-version: 9.0.x
 
       - name: Restore
-        run: dotnet restore BopVisualEffects.sln
+        run: dotnet restore BopVisualEffects.sln -p:SkipGameReferences=true
 
       - name: Build Release
         run: dotnet build BopVisualEffects.sln -c Release -p:SkipGameReferences=true --no-restore

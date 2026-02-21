@@ -28,6 +28,7 @@
 
   <PropertyGroup>
     <SkipGameReferences Condition="'$(SkipGameReferences)' == '' and '$(GITHUB_ACTIONS)' == 'true'">true</SkipGameReferences>
+    <DefineConstants Condition="'$(SkipGameReferences)' == 'true'">$(DefineConstants);SKIP_GAME_REFERENCES</DefineConstants>
     <GameRoot Condition="'$(GameRoot)' == '' and '$(BOP_GAME_ROOT)' != ''">$(BOP_GAME_ROOT)</GameRoot>
     <BepInExRoot Condition="'$(GameRoot)' != ''">$(GameRoot)/BepInEx</BepInExRoot>
     <BepInExPluginsDir Condition="'$(GameRoot)' != ''">$(GameRoot)/BepInEx/plugins</BepInExPluginsDir>
@@ -35,6 +36,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net472" Version="1.0.3" PrivateAssets="all"/>
     <PackageReference Include="BepInEx.Analyzers" Version="1.*" PrivateAssets="all"/>
     <PackageReference Include="BepInEx.Core" Version="5.*"/>
     <PackageReference Include="BepInEx.PluginInfoProps" Version="2.*"/>
