@@ -10,6 +10,7 @@ using BopVisualEffects.Effects.Letterbox;
 using BopVisualEffects.Effects.PixelGrid;
 using BopVisualEffects.Effects.Scanlines;
 using BopVisualEffects.Effects.ScreenNoise;
+using BopVisualEffects.Effects.Sepia;
 using BopVisualEffects.Effects.Vignette;
 using BopVisualEffects.Effects.ZoomIn;
 using BopVisualEffects.Effects.ZoomOut;
@@ -60,6 +61,7 @@ public sealed class EffectDefinitionRegistry
 		registry.Register(new ScanlinesEffect());
 		registry.Register(new VignetteEffect());
 		registry.Register(new ColorTintEffect());
+		registry.Register(new SepiaEffect());
 		registry.Register(new LetterboxEffect());
 		registry.Register(new ScreenNoiseEffect());
 		registry.Register(new PixelGridEffect());
