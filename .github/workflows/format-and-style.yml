@@ -19,10 +19,10 @@ jobs:
           dotnet-version: 9.0.x
 
       - name: Restore
-        run: dotnet restore BopVisualEffects.sln
+        run: dotnet restore BopVisualEffects.sln -p:SkipGameReferences=true
 
       - name: Verify whitespace formatting
-        run: dotnet format whitespace BopVisualEffects.sln --verify-no-changes --verbosity minimal --exclude BopVisualEffects/obj
+        run: dotnet format whitespace BopVisualEffects.sln --no-restore --verify-no-changes --verbosity minimal --exclude BopVisualEffects/obj
 
   code-style:
     runs-on: ubuntu-latest
@@ -37,10 +37,10 @@ jobs:
           dotnet-version: 9.0.x
 
       - name: Restore
-        run: dotnet restore BopVisualEffects.sln
+        run: dotnet restore BopVisualEffects.sln -p:SkipGameReferences=true
 
       - name: Verify code style rules
-        run: dotnet format style BopVisualEffects.sln --verify-no-changes --verbosity minimal --exclude BopVisualEffects/obj
+        run: dotnet format style BopVisualEffects.sln --no-restore --verify-no-changes --verbosity minimal --exclude BopVisualEffects/obj
 
   analyzers:
     runs-on: ubuntu-latest
@@ -55,7 +55,7 @@ jobs:
           dotnet-version: 9.0.x
 
       - name: Restore
-        run: dotnet restore BopVisualEffects.sln
+        run: dotnet restore BopVisualEffects.sln -p:SkipGameReferences=true
 
       - name: Verify analyzer rules
-        run: dotnet format analyzers BopVisualEffects.sln --verify-no-changes --verbosity minimal --exclude BopVisualEffects/obj
+        run: dotnet format analyzers BopVisualEffects.sln --no-restore --verify-no-changes --verbosity minimal --exclude BopVisualEffects/obj
