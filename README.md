@@ -10,7 +10,7 @@ See [this document](docs/effects/README.md) for the full list of effects this mo
 
 Each effect can be individually enabled or disabled in the BepInEx config file (`BepInEx/config/com.brollyy.bopvisualeffects.cfg`), under the `[Effects]` section.
 
-The config file is at `<GameRoot>/BepInEx/config/com.brollyy.bopvisualeffects.cfg`. It is generated automatically on first load. To disable an effect, set its entry to `false`:
+The config file is at `<GameRoot>/BepInEx/config/BopVisualEffects.cfg`. It's generated automatically on first load. To disable an effect, set its entry to `false`:
 
 ```ini
 [Effects]
