@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using BopVisualEffects.Core;
+using BopVisualEffects.Effects.Zoom;
 using UnityEngine;
 
 namespace BopVisualEffects.Effects.ZoomPulse;
@@ -65,9 +66,6 @@ public sealed class ZoomPulseEffect : IVisualEffectDefinition
 		private MixtapeLoaderCustom? _loader;
 		private JukeboxScript? _jukebox;
 		private Camera? _camera;
-		private float _initialOrthographicSize;
-		private float _initialFieldOfView;
-		private bool _isOrthographic;
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
@@ -87,7 +85,8 @@ public sealed class ZoomPulseEffect : IVisualEffectDefinition
 		/// </summary>
 		public void Stop()
 		{
-			ResetCamera();
+			if (_camera is not null)
+				CameraZoomService.RemoveFactor(_camera, this);
 			Destroy(this);
 		}
 
@@ -123,20 +122,13 @@ public sealed class ZoomPulseEffect : IVisualEffectDefinition
 
 			// Clamp zoom factor so the camera size/FOV never reaches zero or negative values.
 			var zoomFactor = Mathf.Clamp(1f - zoomDelta, 0.01f, 1f);
-
-			if (_isOrthographic)
-			{
-				_camera!.orthographicSize = _initialOrthographicSize * zoomFactor;
-			}
-			else
-			{
-				_camera!.fieldOfView = _initialFieldOfView * zoomFactor;
-			}
+			CameraZoomService.SetFactor(_camera!, this, zoomFactor);
 		}
 
 		private void OnDisable()
 		{
-			ResetCamera();
+			if (_camera is not null)
+				CameraZoomService.RemoveFactor(_camera, this);
 		}
 
 		private void InitializeTargetCamera()
@@ -146,21 +138,7 @@ public sealed class ZoomPulseEffect : IVisualEffectDefinition
 				return;
 
 			_camera = camera;
-			_isOrthographic = camera.orthographic;
-			_initialOrthographicSize = camera.orthographicSize;
-			_initialFieldOfView = camera.fieldOfView;
 			_initialized = true;
-		}
-
-		private void ResetCamera()
-		{
-			if (_camera is null)
-				return;
-
-			if (_isOrthographic)
-				_camera.orthographicSize = _initialOrthographicSize;
-			else
-				_camera.fieldOfView = _initialFieldOfView;
 		}
 	}
 }
