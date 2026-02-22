@@ -1,6 +1,4 @@
 using System.Collections.Generic;
-using System.IO;
-using System.Reflection;
 using BopVisualEffects.Core;
 using UnityEngine;
 
@@ -9,8 +7,8 @@ namespace BopVisualEffects.Effects.Hsl;
 /// <summary>
 /// Effect definition for a per-pixel HSL (Hue/Saturation/Lightness) color filter.
 /// Rotates hue, scales saturation, and offsets lightness over the full screen.
-/// Uses <see cref="Camera.OnRenderImage"/> with a Cg shader for per-pixel color space conversion.
-/// Falls back to a passthrough blit when shader compilation is not available.
+/// Uses <see cref="Camera.OnRenderImage"/> via <see cref="HslService"/>, which ensures a
+/// single overlay component per camera regardless of how many HSL events run concurrently.
 /// </summary>
 public sealed class HslEffect : IVisualEffectDefinition
 {
@@ -78,7 +76,8 @@ public sealed class HslEffect : IVisualEffectDefinition
 		private float _endBeat;
 		private MixtapeLoaderCustom? _loader;
 		private JukeboxScript? _jukebox;
-		private HslOverlay? _overlay;
+		private Camera? _camera;
+		private HslRequest? _request;
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
@@ -94,7 +93,7 @@ public sealed class HslEffect : IVisualEffectDefinition
 			_saturation = Mathf.Max(0f, saturation);
 			_lightness = Mathf.Clamp(lightness, -0.5f, 0.5f);
 			_maxIntensity = Mathf.Clamp01(intensity);
-			InitializeOverlay();
+			InitializeRequest();
 		}
 
 		/// <summary>
@@ -102,7 +101,7 @@ public sealed class HslEffect : IVisualEffectDefinition
 		/// </summary>
 		public void Stop()
 		{
-			RemoveOverlay();
+			RemoveRequest();
 			Destroy(this);
 		}
 
@@ -116,7 +115,7 @@ public sealed class HslEffect : IVisualEffectDefinition
 
 			if (!_initialized)
 			{
-				InitializeOverlay();
+				InitializeRequest();
 				if (!_initialized)
 					return;
 			}
@@ -138,125 +137,45 @@ public sealed class HslEffect : IVisualEffectDefinition
 			else
 				envelope = 1f;
 
-			if (_overlay != null)
-				_overlay.SetParams(_hueShift, _saturation, _lightness, _maxIntensity * envelope);
+			if (_request != null)
+			{
+				_request.HueShift = _hueShift;
+				_request.Saturation = _saturation;
+				_request.Lightness = _lightness;
+				_request.Intensity = _maxIntensity * envelope;
+			}
 		}
 
 		private void OnDisable()
 		{
-			RemoveOverlay();
+			RemoveRequest();
 		}
 
-		private void InitializeOverlay()
+		private void InitializeRequest()
 		{
 			Camera? camera = EffectRuntimeController.ResolveEffectCamera(_loader);
 			if (camera is null)
 				return;
 
-			_overlay = camera.gameObject.AddComponent<HslOverlay>();
-			_overlay.SetParams(_hueShift, _saturation, _lightness, _maxIntensity);
+			_camera = camera;
+			_request = HslService.AddRequest(camera);
+			_request.HueShift = _hueShift;
+			_request.Saturation = _saturation;
+			_request.Lightness = _lightness;
+			_request.Intensity = _maxIntensity;
 			_initialized = true;
 		}
 
-		private void RemoveOverlay()
+		private void RemoveRequest()
 		{
-			if (_overlay != null)
+			if (_camera != null && _request != null)
 			{
-				Destroy(_overlay);
+				HslService.RemoveRequest(_camera, _request);
 			}
 
-			_overlay = null;
-		}
-	}
-
-	/// <summary>
-	/// Applies a per-pixel HSL transformation in <see cref="Camera.OnRenderImage"/> using
-	/// <see cref="Graphics.Blit(RenderTexture, RenderTexture, Material)"/> with a Cg shader
-	/// loaded from the embedded resource <c>BopVisualEffects_HSL.shader</c>.
-	/// Falls back to a passthrough blit when the shader is unavailable at runtime.
-	/// Must be attached to a Camera's GameObject.
-	/// </summary>
-	private sealed class HslOverlay : MonoBehaviour
-	{
-		private const string ShaderResourceName = "BopVisualEffects.Effects.Hsl.BopVisualEffects_HSL.shader";
-
-		private static Material? _material;
-		private static bool _shaderUnavailable;
-		private float _hueShift;
-		private float _saturation = 1f;
-		private float _lightness;
-		private float _intensity;
-
-		/// <summary>
-		/// Updates the HSL parameters.
-		/// </summary>
-		public void SetParams(float hueShift, float saturation, float lightness, float intensity)
-		{
-			_hueShift = hueShift;
-			_saturation = saturation;
-			_lightness = lightness;
-			_intensity = intensity;
-		}
-
-		private static string? LoadShaderSource()
-		{
-			using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(ShaderResourceName);
-			if (stream is null)
-				return null;
-
-			using var reader = new StreamReader(stream);
-			return reader.ReadToEnd();
-		}
-
-		private static Material? GetMaterial()
-		{
-			if (_material)
-				return _material;
-
-			if (_shaderUnavailable)
-				return null;
-
-			var shaderSource = LoadShaderSource();
-			if (shaderSource is null)
-			{
-				_shaderUnavailable = true;
-				return null;
-			}
-
-#pragma warning disable CS0618 // Material(string) is obsolete for new code but functional in PC standalone builds.
-			_material = new Material(shaderSource) { hideFlags = HideFlags.HideAndDontSave };
-#pragma warning restore CS0618
-			if (!_material.shader || !_material.shader.isSupported)
-			{
-				Destroy(_material);
-				_material = null;
-				_shaderUnavailable = true;
-			}
-
-			return _material;
-		}
-
-		// Unity calls this on the camera's GameObject with the rendered image as the source.
-		private void OnRenderImage(RenderTexture src, RenderTexture dest)
-		{
-			if (_intensity <= 0f)
-			{
-				Graphics.Blit(src, dest);
-				return;
-			}
-
-			var mat = GetMaterial();
-			if (mat is null)
-			{
-				Graphics.Blit(src, dest);
-				return;
-			}
-
-			mat.SetFloat("_HueShift", _hueShift);
-			mat.SetFloat("_Saturation", _saturation);
-			mat.SetFloat("_Lightness", _lightness);
-			mat.SetFloat("_Intensity", _intensity);
-			Graphics.Blit(src, dest, mat);
+			_camera = null;
+			_request = null;
 		}
 	}
 }
+
