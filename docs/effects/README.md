@@ -135,6 +135,21 @@ Applies a warm vintage sepia-tone filter by multiply-blending the framebuffer �
 - `intensity`: Strength of the sepia toning (0–1; default `0.8`). At `0` the effect is invisible; at `1` the full warm amber tone is applied.
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
 
+## HSL Filter
+
+**DisplayName:** `HSL Filter`
+
+**Config Key:** `Hsl.Enabled`
+
+Adjusts hue, saturation and lightness of the whole screen for creative colour grading. Rotates the hue wheel, scales saturation toward or away from grey, and shifts overall brightness. Fades in and out smoothly.
+
+**Properties**
+- `hue_shift`: Degrees to rotate the hue wheel (-180–180; default `0`).
+- `saturation`: Saturation multiplier (0 = fully greyscale, 1 = unchanged, >1 = boosted; default `1.0`).
+- `lightness`: Additive lightness offset (-0.5–0.5; default `0`). Positive values brighten, negative values darken.
+- `intensity`: Overall blend strength between the original and adjusted image (0–1; default `1.0`).
+- `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
+
 ## Letterbox
 
 **DisplayName:** `Letterbox`

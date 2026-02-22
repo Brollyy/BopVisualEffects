@@ -6,6 +6,7 @@ using BopVisualEffects.Effects.CameraTilt;
 using BopVisualEffects.Effects.CameraShake;
 using BopVisualEffects.Effects.ColorTint;
 using BopVisualEffects.Effects.Fog;
+using BopVisualEffects.Effects.Hsl;
 using BopVisualEffects.Effects.Letterbox;
 using BopVisualEffects.Effects.PixelGrid;
 using BopVisualEffects.Effects.Scanlines;
@@ -62,6 +63,7 @@ public sealed class EffectDefinitionRegistry
 		registry.Register(new VignetteEffect());
 		registry.Register(new ColorTintEffect());
 		registry.Register(new SepiaEffect());
+		registry.Register(new HslEffect());
 		registry.Register(new LetterboxEffect());
 		registry.Register(new ScreenNoiseEffect());
 		registry.Register(new PixelGridEffect());
