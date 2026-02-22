@@ -167,7 +167,8 @@ Pixelates the screen by downsampling the camera's rendered output to a low-resol
 
 **Config Key:** `HorizontalFlip.Enabled`
 
-Mirrors the screen left-to-right for the duration of the event. Composes correctly with Vertical Flip and zoom effects. Can be toggled on/off in the config.
+Mirrors the screen left-to-right for the duration of the event. Composes correctly with Vertical Flip and zoom effects.
+``|
 
 **Properties**
 - `length` (event length in editor): How long the flip lasts, in beats. This event is resizable in the timeline.
