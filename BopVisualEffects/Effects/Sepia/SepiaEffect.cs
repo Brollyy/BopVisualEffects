@@ -1,13 +1,14 @@
 using System.Collections.Generic;
 using BopVisualEffects.Core;
 using UnityEngine;
-using UnityEngine.Rendering;
 
 namespace BopVisualEffects.Effects.Sepia;
 
 /// <summary>
 /// Effect definition for a sepia-tone color filter that gives a warm vintage photograph look.
-/// Uses multiply blending to reduce blue and green channels, warming the overall image.
+/// Uses a three-pass GL approach: desaturates the image, overlays a warm amber tint, and
+/// finishes with a warm sepia multiply — producing a visible amber/brown vintage look at all
+/// intensities. Multiple concurrent instances are composited via <see cref="SepiaService"/>.
 /// </summary>
 public sealed class SepiaEffect : IVisualEffectDefinition
 {
@@ -66,7 +67,8 @@ public sealed class SepiaEffect : IVisualEffectDefinition
 		private float _endBeat;
 		private MixtapeLoaderCustom? _loader;
 		private JukeboxScript? _jukebox;
-		private SepiaOverlay? _overlay;
+		private Camera? _camera;
+		private SepiaRequest? _request;
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
@@ -78,7 +80,7 @@ public sealed class SepiaEffect : IVisualEffectDefinition
 			_startBeat = startBeat;
 			_endBeat = endBeat;
 			_maxIntensity = Mathf.Clamp01(intensity);
-			InitializeOverlay();
+			InitializeRequest();
 		}
 
 		/// <summary>
@@ -86,7 +88,7 @@ public sealed class SepiaEffect : IVisualEffectDefinition
 		/// </summary>
 		public void Stop()
 		{
-			RemoveOverlay();
+			RemoveRequest();
 			Destroy(this);
 		}
 
@@ -100,7 +102,7 @@ public sealed class SepiaEffect : IVisualEffectDefinition
 
 			if (!_initialized)
 			{
-				InitializeOverlay();
+				InitializeRequest();
 				if (!_initialized)
 					return;
 			}
@@ -122,105 +124,35 @@ public sealed class SepiaEffect : IVisualEffectDefinition
 			else
 				envelope = 1f;
 
-			if (_overlay != null)
-				_overlay.SetIntensity(_maxIntensity * envelope);
+			if (_request != null)
+				_request.Intensity = _maxIntensity * envelope;
 		}
 
 		private void OnDisable()
 		{
-			RemoveOverlay();
+			RemoveRequest();
 		}
 
-		private void InitializeOverlay()
+		private void InitializeRequest()
 		{
 			Camera? camera = EffectRuntimeController.ResolveEffectCamera(_loader);
 			if (camera is null)
 				return;
 
-			_overlay = camera.gameObject.AddComponent<SepiaOverlay>();
-			_overlay.SetIntensity(_maxIntensity);
+			_camera = camera;
+			_request = SepiaService.AddRequest(camera);
+			_request.Intensity = _maxIntensity;
 			_initialized = true;
 		}
 
-		private void RemoveOverlay()
+		private void RemoveRequest()
 		{
-			if (_overlay != null)
-			{
-				Destroy(_overlay);
-			}
+			if (_camera != null && _request != null)
+				SepiaService.RemoveRequest(_camera, _request);
 
-			_overlay = null;
-		}
-	}
-
-	/// <summary>
-	/// Draws a full-screen sepia-tone multiply overlay in OnPostRender.
-	/// Uses multiply blend (SrcBlend=DstColor, DstBlend=Zero) to scale the framebuffer's
-	/// green and blue channels downward, warming the image toward sepia tones without
-	/// affecting the red channel. Must be attached to a Camera's GameObject.
-	/// </summary>
-	private sealed class SepiaOverlay : MonoBehaviour
-	{
-		// At full intensity: red is preserved (1.0), green is reduced (0.85), blue is reduced (0.55).
-		// The lerp from white means intensity=0 is a no-op and intensity=1 is the full sepia toning.
-		private const float SepiaTargetG = 0.85f;
-		private const float SepiaTargetB = 0.55f;
-
-		private static Material? _material;
-		private float _intensity;
-
-		/// <summary>
-		/// Updates the sepia intensity (0 = no effect, 1 = full sepia toning).
-		/// </summary>
-		public void SetIntensity(float intensity)
-		{
-			_intensity = intensity;
-		}
-
-		private static Material? GetMaterial()
-		{
-			if (!_material)
-			{
-				var shader = Shader.Find("Hidden/Internal-Colored");
-				if (shader is null)
-					return null;
-
-				_material = new Material(shader) { hideFlags = HideFlags.HideAndDontSave };
-				_material.SetInt("_SrcBlend", (int)BlendMode.DstColor);
-				_material.SetInt("_DstBlend", (int)BlendMode.Zero);
-				_material.SetInt("_Cull", (int)CullMode.Off);
-				_material.SetInt("_ZWrite", 0);
-			}
-
-			return _material;
-		}
-
-		// Unity calls this on the camera's GameObject after it finishes rendering the scene.
-		private void OnPostRender()
-		{
-			if (_intensity <= 0f)
-				return;
-
-			var mat = GetMaterial();
-			if (mat is null)
-				return;
-
-			// Lerp multiply color from white (no-op) toward the warm sepia target.
-			var g = Mathf.Lerp(1.0f, SepiaTargetG, _intensity);
-			var b = Mathf.Lerp(1.0f, SepiaTargetB, _intensity);
-
-			mat.SetPass(0);
-
-			GL.PushMatrix();
-			GL.LoadOrtho();
-			GL.Begin(GL.QUADS);
-			GL.Color(new Color(1.0f, g, b, 1.0f));
-			GL.Vertex3(0f, 0f, 0f);
-			GL.Vertex3(0f, 1f, 0f);
-			GL.Vertex3(1f, 1f, 0f);
-			GL.Vertex3(1f, 0f, 0f);
-			GL.End();
-			GL.PopMatrix();
+			_camera = null;
+			_request = null;
 		}
 	}
 }
+

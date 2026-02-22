@@ -77,13 +77,13 @@ Mirrors the screen left-to-right for the duration of the event. Composes correct
 
 **Config Key:** `Hsl.Enabled`
 
-Adjusts hue, saturation and lightness of the whole screen for creative colour grading. Rotates the hue wheel, scales saturation toward or away from grey, and shifts overall brightness. Fades in and out smoothly.
+Adjusts saturation and lightness of the whole screen for creative colour grading. Fades in and out smoothly.
 
 **Properties**
-- `hue_shift`: Degrees to rotate the hue wheel (-180–180; default `0`).
-- `saturation`: Saturation multiplier (0 = fully greyscale, 1 = unchanged, >1 = boosted; default `1.0`).
+- `hue_shift`: Reserved; currently has no effect.
+- `saturation`: Desaturation amount (0 = fully greyscale, 1 = unchanged; values above 1 have no additional effect; default `1.0`).
 - `lightness`: Additive lightness offset (-0.5–0.5; default `0`). Positive values brighten, negative values darken.
-- `intensity`: Overall blend strength between the original and adjusted image (0–1; default `1.0`).
+- `intensity`: Overall blend strength (0–1; default `1.0`).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
 
 ## Letterbox
@@ -144,10 +144,10 @@ Draws animated TV static noise specks over the screen for a glitchy atmosphere. 
 
 **Config Key:** `Sepia.Enabled`
 
-Applies a warm vintage sepia-tone filter by multiply-blending the framebuffer — red is preserved while green and blue channels are pulled down, producing a characteristic amber photograph look. Fades in and out smoothly.
+Applies a warm vintage sepia-tone filter using a three-pass GL approach: desaturates the image toward grey, overlays a warm amber tint, and finishes with a warm sepia multiply — producing a visible amber/brown vintage look at all intensities. Fades in and out smoothly.
 
 **Properties**
-- `intensity`: Strength of the sepia toning (0–1; default `0.8`). At `0` the effect is invisible; at `1` the full warm amber tone is applied.
+- `intensity`: Strength of the sepia toning (0–1; default `0.8`).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
 
 ## Vertical Flip

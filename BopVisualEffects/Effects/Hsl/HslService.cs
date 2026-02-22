@@ -1,7 +1,6 @@
 using System.Collections.Generic;
-using System.IO;
-using System.Reflection;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace BopVisualEffects.Effects.Hsl;
 
@@ -19,9 +18,8 @@ internal sealed class HslRequest
 
 /// <summary>
 /// Shared per-camera coordinator for HSL filter effects.
-/// Ensures a single <see cref="HslOverlay"/> component exists per camera and chains all active
-/// HSL requests into one <see cref="Camera.OnRenderImage"/> blit pipeline, preventing
-/// multiple handlers from stacking on the same camera.
+/// Ensures a single <see cref="HslOverlay"/> component exists per camera and applies all active
+/// HSL requests in one <see cref="Camera.OnPostRender"/> pass using GL blend operations.
 /// </summary>
 internal static class HslService
 {
@@ -83,88 +81,52 @@ internal static class HslService
 	}
 
 	/// <summary>
-	/// Camera-attached component that chains all active HSL requests as a sequential blit
-	/// pipeline in <see cref="Camera.OnRenderImage"/>.
+	/// Camera-attached GL overlay that applies HSL adjustments for all active requests in
+	/// <see cref="Camera.OnPostRender"/> using blend operations:
+	/// <list type="bullet">
+	///   <item>Saturation reduction (0–1): alpha-blend toward neutral grey.</item>
+	///   <item>Lightness increase: alpha-blend toward white.</item>
+	///   <item>Lightness decrease: alpha-blend toward black.</item>
+	/// </list>
+	/// Hue rotation and saturation boosting above 1 are not achievable via GL blend operations
+	/// and are silently ignored.
 	/// There is at most one instance per camera, managed by <see cref="HslService"/>.
 	/// </summary>
 	internal sealed class HslOverlay : MonoBehaviour
 	{
-		private const string ShaderResourceName = "BopVisualEffects.Effects.Hsl.BopVisualEffects_HSL.shader";
-
 		private static Material? _material;
-		private static bool _shaderUnavailable;
 
 		/// <summary>
 		/// Active requests for this camera. Assigned by <see cref="HslService"/> on creation.
 		/// </summary>
 		internal List<HslRequest>? Requests;
 
-		private static string? LoadShaderSource()
-		{
-			using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(ShaderResourceName);
-			if (stream is null)
-				return null;
-
-			using var reader = new StreamReader(stream);
-			return reader.ReadToEnd();
-		}
-
 		private static Material? GetMaterial()
 		{
-			if (_material)
-				return _material;
-
-			if (_shaderUnavailable)
-				return null;
-
-			var shaderSource = LoadShaderSource();
-			if (shaderSource is null)
+			if (!_material)
 			{
-				_shaderUnavailable = true;
-				return null;
-			}
+				var shader = Shader.Find("Hidden/Internal-Colored");
+				if (shader is null)
+					return null;
 
-#pragma warning disable CS0618 // Material(string) is obsolete for new code but functional in PC standalone builds.
-			_material = new Material(shaderSource) { hideFlags = HideFlags.HideAndDontSave };
-#pragma warning restore CS0618
-			if (!_material.shader || !_material.shader.isSupported)
-			{
-				Destroy(_material);
-				_material = null;
-				_shaderUnavailable = true;
+				_material = new Material(shader) { hideFlags = HideFlags.HideAndDontSave };
 			}
 
 			return _material;
 		}
 
-		// Unity calls this on the camera's GameObject with the rendered image as the source.
-		// Chains all active HSL requests as sequential blits through intermediate RenderTextures.
-		private void OnRenderImage(RenderTexture src, RenderTexture dest)
+		// Unity calls this on the camera's GameObject after the scene finishes rendering.
+		private void OnPostRender()
 		{
+			if (Requests is null)
+				return;
+
 			var mat = GetMaterial();
-			if (mat is null || Requests is null)
-			{
-				Graphics.Blit(src, dest);
+			if (mat is null)
 				return;
-			}
 
-			var activeCount = 0;
-			foreach (var r in Requests)
-			{
-				if (r.Intensity > 0f)
-					activeCount++;
-			}
-
-			if (activeCount == 0)
-			{
-				Graphics.Blit(src, dest);
-				return;
-			}
-
-			// Chain active requests: src → [temp₁ → … → tempₙ₋₁] → dest.
-			// Each request applies its own HSL adjustment to the output of the previous one.
-			var intermediates = new List<RenderTexture>(activeCount - 1);
-			var processed = 0;
+			GL.PushMatrix();
+			GL.LoadOrtho();
 
 			try
 			{
@@ -173,33 +135,61 @@ internal static class HslService
 					if (req.Intensity <= 0f)
 						continue;
 
-					processed++;
-					var isLast = processed == activeCount;
-					var source = (processed == 1) ? src : intermediates[intermediates.Count - 1];
-					RenderTexture target;
-
-					if (isLast)
+					// Saturation reduction: blend toward neutral grey.
+					// Saturation values above 1 (boost) are not achievable via GL and are ignored.
+					var desatAmount = Mathf.Clamp01((1f - req.Saturation) * req.Intensity);
+					if (desatAmount > 0f)
 					{
-						target = dest;
-					}
-					else
-					{
-						target = RenderTexture.GetTemporary(src.descriptor);
-						intermediates.Add(target);
+						mat.SetInt("_SrcBlend", (int)BlendMode.SrcAlpha);
+						mat.SetInt("_DstBlend", (int)BlendMode.OneMinusSrcAlpha);
+						mat.SetPass(0);
+
+						GL.Begin(GL.QUADS);
+						GL.Color(new Color(0.5f, 0.5f, 0.5f, desatAmount));
+						GL.Vertex3(0f, 0f, 0f);
+						GL.Vertex3(0f, 1f, 0f);
+						GL.Vertex3(1f, 1f, 0f);
+						GL.Vertex3(1f, 0f, 0f);
+						GL.End();
 					}
 
-					mat.SetFloat("_HueShift", req.HueShift);
-					mat.SetFloat("_Saturation", req.Saturation);
-					mat.SetFloat("_Lightness", req.Lightness);
-					mat.SetFloat("_Intensity", req.Intensity);
-					Graphics.Blit(source, target, mat);
+					// Lightness shift: blend toward white (positive) or black (negative).
+					var lightnessAmount = Mathf.Clamp(req.Lightness * req.Intensity, -1f, 1f);
+					if (lightnessAmount > 0f)
+					{
+						mat.SetInt("_SrcBlend", (int)BlendMode.SrcAlpha);
+						mat.SetInt("_DstBlend", (int)BlendMode.OneMinusSrcAlpha);
+						mat.SetPass(0);
+
+						GL.Begin(GL.QUADS);
+						GL.Color(new Color(1f, 1f, 1f, lightnessAmount));
+						GL.Vertex3(0f, 0f, 0f);
+						GL.Vertex3(0f, 1f, 0f);
+						GL.Vertex3(1f, 1f, 0f);
+						GL.Vertex3(1f, 0f, 0f);
+						GL.End();
+					}
+					else if (lightnessAmount < 0f)
+					{
+						mat.SetInt("_SrcBlend", (int)BlendMode.SrcAlpha);
+						mat.SetInt("_DstBlend", (int)BlendMode.OneMinusSrcAlpha);
+						mat.SetPass(0);
+
+						GL.Begin(GL.QUADS);
+						GL.Color(new Color(0f, 0f, 0f, -lightnessAmount));
+						GL.Vertex3(0f, 0f, 0f);
+						GL.Vertex3(0f, 1f, 0f);
+						GL.Vertex3(1f, 1f, 0f);
+						GL.Vertex3(1f, 0f, 0f);
+						GL.End();
+					}
 				}
 			}
 			finally
 			{
-				foreach (var t in intermediates)
-					RenderTexture.ReleaseTemporary(t);
+				GL.PopMatrix();
 			}
 		}
 	}
 }
+
