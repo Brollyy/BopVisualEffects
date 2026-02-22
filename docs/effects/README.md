@@ -178,7 +178,7 @@ Mirrors the screen left-to-right for the duration of the event. Composes correct
 
 **Config Key:** `VerticalFlip.Enabled`
 
-Mirrors the screen top-to-bottom for the duration of the event. Composes correctly with Horizontal Flip and zoom effects. Can be toggled on/off in the config.
+Mirrors the screen top-to-bottom for the duration of the event. Composes correctly with Horizontal Flip and zoom effects.
 
 **Properties**
 - `length` (event length in editor): How long the flip lasts, in beats. This event is resizable in the timeline.
