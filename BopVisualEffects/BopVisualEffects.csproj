@@ -59,6 +59,10 @@
     </Reference>
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="Effects\Hsl\BopVisualEffects_HSL.shader" />
+  </ItemGroup>
+
   <Target Name="ValidateTemplateDependencies" BeforeTargets="ResolveReferences" Condition="'$(SkipGameReferences)' != 'true'">
     <ItemGroup>
       <MissingGameLibrary Include="@(GameLibrary)"
