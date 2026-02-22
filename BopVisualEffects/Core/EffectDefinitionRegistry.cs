@@ -6,10 +6,12 @@ using BopVisualEffects.Effects.CameraTilt;
 using BopVisualEffects.Effects.CameraShake;
 using BopVisualEffects.Effects.ColorTint;
 using BopVisualEffects.Effects.Fog;
+using BopVisualEffects.Effects.HorizontalFlip;
 using BopVisualEffects.Effects.Letterbox;
 using BopVisualEffects.Effects.PixelGrid;
 using BopVisualEffects.Effects.Scanlines;
 using BopVisualEffects.Effects.ScreenNoise;
+using BopVisualEffects.Effects.VerticalFlip;
 using BopVisualEffects.Effects.Vignette;
 using BopVisualEffects.Effects.ZoomIn;
 using BopVisualEffects.Effects.ZoomOut;
@@ -63,6 +65,8 @@ public sealed class EffectDefinitionRegistry
 		registry.Register(new LetterboxEffect());
 		registry.Register(new ScreenNoiseEffect());
 		registry.Register(new PixelGridEffect());
+		registry.Register(new HorizontalFlipEffect());
+		registry.Register(new VerticalFlipEffect());
 		_instance = registry;
 	}
 
