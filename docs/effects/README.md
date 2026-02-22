@@ -123,6 +123,18 @@ Applies a sustained full-screen color tint that fades in, holds, then fades out.
 - `alpha`: Maximum opacity (0–1; default `0.25`).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
 
+## Sepia
+
+**DisplayName:** `Sepia`
+
+**Config Key:** `Sepia.Enabled`
+
+Applies a warm vintage sepia-tone filter by multiply-blending the framebuffer — red is preserved while green and blue channels are pulled down, producing a characteristic amber photograph look. Fades in and out smoothly.
+
+**Properties**
+- `intensity`: Strength of the sepia toning (0–1; default `0.8`). At `0` the effect is invisible; at `1` the full warm amber tone is applied.
+- `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
+
 ## Letterbox
 
 **DisplayName:** `Letterbox`
