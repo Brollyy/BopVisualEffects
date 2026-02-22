@@ -49,6 +49,23 @@
   - `LogService.GetForClass<T>()` in other classes.
 - Keep log messages concise and actionable.
 
+## Effect implementation pattern
+
+Each effect follows this structure:
+1. A class in `BopVisualEffects/Effects/<EffectName>/` implementing `IVisualEffectDefinition` (fills in `Id`, `DisplayName`, `ConfigKey`, `Description`, `CreateTemplate`, and `TrySchedule`).
+2. A dedicated `MonoBehaviour` runner (nested in the same file or a sibling file) spawned via `EffectRuntimeController.Instance.SpawnRunner<T>(...)` inside `TrySchedule`.
+3. The runner handles timing (start/end beat), per-frame updates in `LateUpdate`, and cleanup in `Stop`/`OnDisable`.
+4. Registration via `EffectDefinitionRegistry.Initialize(...)` using `Register(new YourEffect())`.
+5. Documentation media at `docs/effects/<effect-id>/preview.gif` and `docs/effects/<effect-id>/demo.mp4`, and an entry in `docs/effects/README.md`.
+
+**Handling effect conflicts and concurrent instances:**
+- Before implementing a new effect, consider how it interacts with all existing effects when running simultaneously.
+- If two effects can conflict when applied at the same time (e.g. both modify the same camera property or render pipeline stage), they must use a **shared coordinator component** attached to the camera's `GameObject` (see `CameraFlipService` for the flip effects as an example). This also applies to multiple concurrent instances of the same effect.
+- The shared component is responsible for compositing all active requests into a single coherent state, tracking reference counts, and cleaning itself up when no instances are active.
+
+**Effect list ordering:**
+- All effect lists in the repository (e.g. `Register` calls in `EffectDefinitionRegistry.cs`, sections in `docs/effects/README.md`) must be kept sorted alphabetically by display name.
+
 ## When acting as a standalone implementation agent
 - Prefer small, focused changes.
 - Keep changes consistent with existing architecture and naming.
