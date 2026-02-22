@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using BopVisualEffects.Core;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -16,7 +17,7 @@ internal sealed class SepiaRequest
 /// <summary>
 /// Shared per-camera coordinator for sepia filter effects.
 /// Ensures a single <see cref="SepiaOverlay"/> component exists per camera and composites
-/// all active sepia requests into one <see cref="Camera.OnPostRender"/> pass, preventing
+/// all active sepia requests into one <see cref="Camera.OnRenderImage"/> pass, preventing
 /// multiplicative compounding when multiple sepia events overlap.
 /// </summary>
 internal static class SepiaService
@@ -79,60 +80,115 @@ internal static class SepiaService
 	}
 
 	/// <summary>
-	/// Three-pass GL overlay that produces a warm vintage sepia look in <see cref="Camera.OnPostRender"/>.
-	/// <list type="number">
-	///   <item>Alpha-blend toward neutral grey to desaturate the image.</item>
-	///   <item>Alpha-blend a warm amber overlay to add the characteristic brownish tint.</item>
-	///   <item>Multiply-blend with a warm sepia tone to complete the coloring.</item>
-	/// </list>
-	/// Multiple concurrent requests are composited using screen-blend intensity so they
-	/// reinforce rather than compound multiplicatively.
+	/// Camera-attached component that applies the sepia tone filter in
+	/// <see cref="Camera.OnRenderImage"/>. When the shader AssetBundle is available it uses a
+	/// per-pixel sepia conversion shader (standard Adobe/Kodak matrix) via
+	/// <see cref="Graphics.Blit(RenderTexture, RenderTexture, Material)"/>.  When the bundle is
+	/// absent it falls back to three GL blend passes that produce an approximation.  Multiple
+	/// concurrent requests are composited using screen-blend intensity so overlapping sepia events
+	/// reinforce each other predictably rather than compounding multiplicatively.
 	/// There is at most one instance per camera, managed by <see cref="SepiaService"/>.
 	/// </summary>
 	internal sealed class SepiaOverlay : MonoBehaviour
 	{
-		private static Material? _material;
+		private const string ShaderAssetPath = "Assets/Shaders/BopVisualEffects_Sepia.shader";
+
+		private static Material? _sepiaMaterial;
+		private static bool _sepiaShaderUnavailable;
+		private static Material? _glMaterial;
 
 		/// <summary>
 		/// Active requests for this camera. Assigned by <see cref="SepiaService"/> on creation.
 		/// </summary>
 		internal List<SepiaRequest>? Requests;
 
-		private static Material? GetMaterial()
+		private static Material? GetSepiaMaterial()
 		{
-			if (!_material)
+			if (_sepiaMaterial)
+				return _sepiaMaterial;
+
+			if (_sepiaShaderUnavailable)
+				return null;
+
+			var bundle = ShaderBundleLoader.GetBundle();
+			if (bundle is null)
+			{
+				_sepiaShaderUnavailable = true;
+				return null;
+			}
+
+			var shader = bundle.LoadAsset<Shader>(ShaderAssetPath);
+			if (shader is null || !shader.isSupported)
+			{
+				_sepiaShaderUnavailable = true;
+				return null;
+			}
+
+			_sepiaMaterial = new Material(shader) { hideFlags = HideFlags.HideAndDontSave };
+			return _sepiaMaterial;
+		}
+
+		private static Material? GetGlMaterial()
+		{
+			if (!_glMaterial)
 			{
 				var shader = Shader.Find("Hidden/Internal-Colored");
 				if (shader is null)
 					return null;
 
-				_material = new Material(shader) { hideFlags = HideFlags.HideAndDontSave };
+				_glMaterial = new Material(shader) { hideFlags = HideFlags.HideAndDontSave };
 			}
 
-			return _material;
+			return _glMaterial;
 		}
 
-		// Unity calls this on the camera's GameObject after the scene finishes rendering.
-		private void OnPostRender()
+		// Unity calls this on the camera's GameObject with the rendered image as the source.
+		private void OnRenderImage(RenderTexture src, RenderTexture dest)
 		{
 			if (Requests is null)
+			{
+				Graphics.Blit(src, dest);
 				return;
+			}
 
 			// Combine all active request intensities using screen-blend compositing:
 			// combined = 1 − (1−i₁)·(1−i₂)·… so overlapping sepia events reinforce each other.
-			var combinedIntensity = 0f;
+			var combined = 0f;
 			foreach (var r in Requests)
 			{
 				if (r.Intensity > 0f)
-					combinedIntensity = 1f - (1f - combinedIntensity) * (1f - r.Intensity);
+					combined = 1f - (1f - combined) * (1f - r.Intensity);
 			}
 
-			if (combinedIntensity <= 0f)
+			if (combined <= 0f)
+			{
+				Graphics.Blit(src, dest);
+				return;
+			}
+
+			var mat = GetSepiaMaterial();
+			if (mat != null)
+			{
+				mat.SetFloat("_Intensity", combined);
+				Graphics.Blit(src, dest, mat);
+			}
+			else
+			{
+				ApplyGlFallback(src, dest, combined);
+			}
+		}
+
+		private static void ApplyGlFallback(RenderTexture src, RenderTexture dest, float combinedIntensity)
+		{
+			// Copy source into dest first, then draw GL blend operations on top.
+			Graphics.Blit(src, dest);
+
+			var glMat = GetGlMaterial();
+			if (glMat is null)
 				return;
 
-			var mat = GetMaterial();
-			if (mat is null)
-				return;
+			var prevActive = RenderTexture.active;
+			RenderTexture.active = dest;
 
 			GL.PushMatrix();
 			GL.LoadOrtho();
@@ -140,9 +196,9 @@ internal static class SepiaService
 			try
 			{
 				// Pass 1 — desaturate: blend toward neutral grey.
-				mat.SetInt("_SrcBlend", (int)BlendMode.SrcAlpha);
-				mat.SetInt("_DstBlend", (int)BlendMode.OneMinusSrcAlpha);
-				mat.SetPass(0);
+				glMat.SetInt("_SrcBlend", (int)BlendMode.SrcAlpha);
+				glMat.SetInt("_DstBlend", (int)BlendMode.OneMinusSrcAlpha);
+				glMat.SetPass(0);
 
 				GL.Begin(GL.QUADS);
 				GL.Color(new Color(0.5f, 0.5f, 0.5f, combinedIntensity * 0.75f));
@@ -153,9 +209,9 @@ internal static class SepiaService
 				GL.End();
 
 				// Pass 2 — warm tint: blend a warm amber colour over the desaturated image.
-				mat.SetInt("_SrcBlend", (int)BlendMode.SrcAlpha);
-				mat.SetInt("_DstBlend", (int)BlendMode.OneMinusSrcAlpha);
-				mat.SetPass(0);
+				glMat.SetInt("_SrcBlend", (int)BlendMode.SrcAlpha);
+				glMat.SetInt("_DstBlend", (int)BlendMode.OneMinusSrcAlpha);
+				glMat.SetPass(0);
 
 				GL.Begin(GL.QUADS);
 				GL.Color(new Color(0.60f, 0.40f, 0.20f, combinedIntensity * 0.5f));
@@ -168,9 +224,9 @@ internal static class SepiaService
 				// Pass 3 — sepia multiply: apply warm toning multiply to complete the look.
 				var g = Mathf.Lerp(1.0f, 0.85f, combinedIntensity);
 				var b = Mathf.Lerp(1.0f, 0.55f, combinedIntensity);
-				mat.SetInt("_SrcBlend", (int)BlendMode.DstColor);
-				mat.SetInt("_DstBlend", (int)BlendMode.Zero);
-				mat.SetPass(0);
+				glMat.SetInt("_SrcBlend", (int)BlendMode.DstColor);
+				glMat.SetInt("_DstBlend", (int)BlendMode.Zero);
+				glMat.SetPass(0);
 
 				GL.Begin(GL.QUADS);
 				GL.Color(new Color(1.0f, g, b, 1.0f));
@@ -183,7 +239,9 @@ internal static class SepiaService
 			finally
 			{
 				GL.PopMatrix();
+				RenderTexture.active = prevActive;
 			}
 		}
 	}
 }
+

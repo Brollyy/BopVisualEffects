@@ -77,11 +77,11 @@ Mirrors the screen left-to-right for the duration of the event. Composes correct
 
 **Config Key:** `Hsl.Enabled`
 
-Adjusts saturation and lightness of the whole screen for creative colour grading. Fades in and out smoothly.
+Adjusts hue, saturation and lightness of the whole screen for creative colour grading using a per-pixel shader. Fades in and out smoothly. Requires the shader AssetBundle to be built from `BopVisualEffectsShaders/` — see that directory's `README.md` for build instructions. Falls back to GL blend operations (saturation/lightness only; no hue rotation) when the bundle is absent.
 
 **Properties**
-- `hue_shift`: Reserved; currently has no effect.
-- `saturation`: Desaturation amount (0 = fully greyscale, 1 = unchanged; values above 1 have no additional effect; default `1.0`).
+- `hue_shift`: Degrees to rotate the hue wheel (-180–180; default `0`). Requires shader bundle; ignored in GL fallback.
+- `saturation`: Saturation multiplier (0 = fully greyscale, 1 = unchanged, >1 = boosted; default `1.0`). Boost above 1 requires shader bundle.
 - `lightness`: Additive lightness offset (-0.5–0.5; default `0`). Positive values brighten, negative values darken.
 - `intensity`: Overall blend strength (0–1; default `1.0`).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
@@ -144,7 +144,7 @@ Draws animated TV static noise specks over the screen for a glitchy atmosphere. 
 
 **Config Key:** `Sepia.Enabled`
 
-Applies a warm vintage sepia-tone filter using a three-pass GL approach: desaturates the image toward grey, overlays a warm amber tint, and finishes with a warm sepia multiply — producing a visible amber/brown vintage look at all intensities. Fades in and out smoothly.
+Applies a warm vintage sepia-tone filter using a per-pixel shader (standard Adobe/Kodak sepia matrix). Fades in and out smoothly. Requires the shader AssetBundle to be built from `BopVisualEffectsShaders/` — see that directory's `README.md` for build instructions. Falls back to a three-pass GL approximation (desaturate → amber tint → sepia multiply) when the bundle is absent.
 
 **Properties**
 - `intensity`: Strength of the sepia toning (0–1; default `0.8`).

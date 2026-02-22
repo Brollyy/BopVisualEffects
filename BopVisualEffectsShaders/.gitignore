@@ -1,0 +1,19 @@
+# Unity project build artifacts — never commit these.
+
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+
+# AssetBundle output (built by BuildAssetBundles.cs — committed from the main project instead).
+/AssetBundles/
+
+# Visual Studio / Rider generated files.
+.vs/
+.idea/
+*.csproj
+*.sln
+ExportedObj/

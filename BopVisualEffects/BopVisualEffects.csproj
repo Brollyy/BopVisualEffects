@@ -59,8 +59,8 @@
     </Reference>
   </ItemGroup>
 
-  <ItemGroup>
-    <EmbeddedResource Include="Effects\Hsl\BopVisualEffects_HSL.shader" />
+  <ItemGroup Condition="Exists('Resources\bopvisualeffects_shaders.assetbundle')">
+    <EmbeddedResource Include="Resources\bopvisualeffects_shaders.assetbundle" />
   </ItemGroup>
 
   <Target Name="ValidateTemplateDependencies" BeforeTargets="ResolveReferences" Condition="'$(SkipGameReferences)' != 'true'">
