@@ -72,7 +72,7 @@ Shader "Hidden/BopVisualEffects_HSL"
                 fixed4 col = tex2D(_MainTex, i.uv);
                 float3 hsl = RgbToHsl(col.rgb);
                 hsl.x = frac(hsl.x + _HueShift / 360.0);
-                hsl.y = saturate(hsl.y * _Saturation);
+                hsl.y = hsl.y * _Saturation;
                 hsl.z = saturate(hsl.z + _Lightness);
                 float3 adjusted = HslToRgb(hsl);
                 col.rgb = lerp(col.rgb, adjusted, _Intensity);

@@ -181,6 +181,7 @@ public sealed class HslEffect : IVisualEffectDefinition
 		private const string ShaderResourceName = "BopVisualEffects.Effects.Hsl.BopVisualEffects_HSL.shader";
 
 		private static Material? _material;
+		private static bool _shaderUnavailable;
 		private float _hueShift;
 		private float _saturation = 1f;
 		private float _lightness;
@@ -212,9 +213,15 @@ public sealed class HslEffect : IVisualEffectDefinition
 			if (_material)
 				return _material;
 
+			if (_shaderUnavailable)
+				return null;
+
 			var shaderSource = LoadShaderSource();
 			if (shaderSource is null)
+			{
+				_shaderUnavailable = true;
 				return null;
+			}
 
 #pragma warning disable CS0618 // Material(string) is obsolete for new code but functional in PC standalone builds.
 			_material = new Material(shaderSource) { hideFlags = HideFlags.HideAndDontSave };
@@ -223,6 +230,7 @@ public sealed class HslEffect : IVisualEffectDefinition
 			{
 				Destroy(_material);
 				_material = null;
+				_shaderUnavailable = true;
 			}
 
 			return _material;
