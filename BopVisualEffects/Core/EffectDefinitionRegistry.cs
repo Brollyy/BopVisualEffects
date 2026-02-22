@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using BepInEx.Configuration;
-using BopVisualEffects.Effects.CameraTilt;
 using BopVisualEffects.Effects.CameraShake;
+using BopVisualEffects.Effects.CameraTilt;
 using BopVisualEffects.Effects.ColorTint;
 using BopVisualEffects.Effects.Fog;
 using BopVisualEffects.Effects.HorizontalFlip;
@@ -55,18 +55,18 @@ public sealed class EffectDefinitionRegistry
 		var registry = new EffectDefinitionRegistry(pluginGuid, log, config);
 		registry.Register(new CameraShakeEffect());
 		registry.Register(new CameraTiltEffect());
-		registry.Register(new ZoomPulseEffect());
+		registry.Register(new ColorTintEffect());
+		registry.Register(new FogEffect());
+		registry.Register(new HorizontalFlipEffect());
+		registry.Register(new LetterboxEffect());
+		registry.Register(new PixelGridEffect());
+		registry.Register(new ScanlinesEffect());
+		registry.Register(new ScreenNoiseEffect());
+		registry.Register(new VerticalFlipEffect());
+		registry.Register(new VignetteEffect());
 		registry.Register(new ZoomInEffect());
 		registry.Register(new ZoomOutEffect());
-		registry.Register(new FogEffect());
-		registry.Register(new ScanlinesEffect());
-		registry.Register(new VignetteEffect());
-		registry.Register(new ColorTintEffect());
-		registry.Register(new LetterboxEffect());
-		registry.Register(new ScreenNoiseEffect());
-		registry.Register(new PixelGridEffect());
-		registry.Register(new HorizontalFlipEffect());
-		registry.Register(new VerticalFlipEffect());
+		registry.Register(new ZoomPulseEffect());
 		_instance = registry;
 	}
 
