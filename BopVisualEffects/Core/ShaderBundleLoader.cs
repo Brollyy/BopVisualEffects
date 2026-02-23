@@ -5,8 +5,12 @@ using UnityEngine;
 namespace BopVisualEffects.Core;
 
 /// <summary>
-/// Loads the <c>bopvisualeffects_shaders</c> AssetBundle from the embedded assembly resource
-/// and caches it for the lifetime of the session.
+/// Loads the platform-appropriate <c>bopvisualeffects_shaders</c> AssetBundle from the embedded
+/// assembly resource and caches it for the lifetime of the session.
+/// <para>
+/// A separate bundle is built and embedded for each supported OS (Windows, macOS, Linux).
+/// At runtime the loader selects the bundle matching <see cref="Application.platform"/>.
+/// </para>
 /// <para>
 /// The bundle is only present when it has been built from the <c>BopVisualEffectsShaders</c>
 /// Unity project (see <c>BopVisualEffectsShaders/README.md</c>) and committed to the repository.
@@ -16,8 +20,8 @@ namespace BopVisualEffects.Core;
 /// </summary>
 internal static class ShaderBundleLoader
 {
-	private const string ResourceName =
-		"BopVisualEffects.Resources.bopvisualeffects_shaders.assetbundle";
+	private const string ResourcePrefix = "BopVisualEffects.Resources.bopvisualeffects_shaders_";
+	private const string ResourceSuffix = ".assetbundle";
 
 	private static AssetBundle? _bundle;
 	private static bool _loadAttempted;
@@ -33,8 +37,13 @@ internal static class ShaderBundleLoader
 
 		_loadAttempted = true;
 
+		var platformSuffix = GetPlatformSuffix();
+		if (platformSuffix is null)
+			return null;
+
+		var resourceName = ResourcePrefix + platformSuffix + ResourceSuffix;
 		using var stream = Assembly.GetExecutingAssembly()
-			.GetManifestResourceStream(ResourceName);
+			.GetManifestResourceStream(resourceName);
 		if (stream is null)
 			return null;
 
@@ -43,4 +52,12 @@ internal static class ShaderBundleLoader
 		_bundle = AssetBundle.LoadFromMemory(ms.ToArray());
 		return _bundle;
 	}
+
+	private static string? GetPlatformSuffix() => Application.platform switch
+	{
+		RuntimePlatform.WindowsPlayer => "win",
+		RuntimePlatform.OSXPlayer => "osx",
+		RuntimePlatform.LinuxPlayer => "linux",
+		_ => null,
+	};
 }
