@@ -153,7 +153,7 @@ Darkens the screen edges with a smooth radial/elliptical gradient using a 32-seg
 
 **Config Key:** `ZoomIn.Enabled`
 
-Eases the camera smoothly into a zoomed-in view, holds at the target level, then eases back out. Great for building tension or drawing attention to a musical phrase.
+Eases the camera smoothly into a zoomed-in view, holds at the target level, then eases back out. Great for building tension or drawing attention to a musical phrase. Composes correctly with Zoom Out, Zoom Pulse, and other concurrent Zoom In instances.
 
 **Properties**
 - `intensity`: How far to zoom in, as a fraction of the camera's base size (e.g. `0.2` = 20% closer). Clamped to `[0, 0.99]`.
@@ -165,7 +165,7 @@ Eases the camera smoothly into a zoomed-in view, holds at the target level, then
 
 **Config Key:** `ZoomOut.Enabled`
 
-Eases the camera smoothly out to a wider view, holds, then eases back in. Great for revealing the scene or creating a sense of space.
+Eases the camera smoothly out to a wider view, holds, then eases back in. Great for revealing the scene or creating a sense of space. Composes correctly with Zoom In, Zoom Pulse, and other concurrent Zoom Out instances.
 
 **Properties**
 - `intensity`: How far to zoom out, as a fraction of the camera's base size (e.g. `0.2` = 20% further out).
@@ -177,7 +177,7 @@ Eases the camera smoothly out to a wider view, holds, then eases back in. Great 
 
 **Config Key:** `ZoomPulse.Enabled`
 
-Rapidly zooms the camera in and then eases it back out, creating a punchy "push-in" accent. Works with both orthographic and perspective cameras.
+Rapidly zooms the camera in and then eases it back out, creating a punchy "push-in" accent. Works with both orthographic and perspective cameras. Composes correctly with Zoom In, Zoom Out, and other concurrent Zoom Pulse instances.
 
 **Properties**
 - `intensity`: How much to zoom in, expressed as a fraction of the camera's base size (e.g. `0.15` = 15% zoom).

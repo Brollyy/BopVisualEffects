@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using BopVisualEffects.Core;
+using BopVisualEffects.Effects.Zoom;
 using UnityEngine;
 
 namespace BopVisualEffects.Effects.ZoomOut;
@@ -65,9 +66,6 @@ public sealed class ZoomOutEffect : IVisualEffectDefinition
 		private MixtapeLoaderCustom? _loader;
 		private JukeboxScript? _jukebox;
 		private Camera? _camera;
-		private float _initialOrthographicSize;
-		private float _initialFieldOfView;
-		private bool _isOrthographic;
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
@@ -87,7 +85,8 @@ public sealed class ZoomOutEffect : IVisualEffectDefinition
 		/// </summary>
 		public void Stop()
 		{
-			ResetCamera();
+			if (_camera is not null)
+				CameraZoomService.RemoveFactor(_camera, this);
 			Destroy(this);
 		}
 
@@ -125,16 +124,13 @@ public sealed class ZoomOutEffect : IVisualEffectDefinition
 
 			// Zoom out: zoomFactor > 1 means larger camera size = more zoomed out.
 			var zoomFactor = 1f + _intensity * envelope;
-
-			if (_isOrthographic)
-				_camera!.orthographicSize = _initialOrthographicSize * zoomFactor;
-			else
-				_camera!.fieldOfView = Mathf.Min(_initialFieldOfView * zoomFactor, 179f);
+			CameraZoomService.SetFactor(_camera!, this, zoomFactor);
 		}
 
 		private void OnDisable()
 		{
-			ResetCamera();
+			if (_camera is not null)
+				CameraZoomService.RemoveFactor(_camera, this);
 		}
 
 		private void InitializeTargetCamera()
@@ -144,21 +140,7 @@ public sealed class ZoomOutEffect : IVisualEffectDefinition
 				return;
 
 			_camera = camera;
-			_isOrthographic = camera.orthographic;
-			_initialOrthographicSize = camera.orthographicSize;
-			_initialFieldOfView = camera.fieldOfView;
 			_initialized = true;
-		}
-
-		private void ResetCamera()
-		{
-			if (_camera is null)
-				return;
-
-			if (_isOrthographic)
-				_camera.orthographicSize = _initialOrthographicSize;
-			else
-				_camera.fieldOfView = _initialFieldOfView;
 		}
 	}
 }
