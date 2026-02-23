@@ -56,6 +56,5 @@ updated `bopvisualeffects_shaders_*.assetbundle` files.
 ## Fallback behaviour
 
 If no matching bundle resource is embedded (e.g., initial checkout before the first build, or the
-current platform has no bundle), both effects fall back to GL blend operations automatically at
-runtime — no error is thrown and the mod remains functional, albeit with limited colour-grading
-fidelity (no true hue rotation or per-pixel sepia).
+current platform has no bundle), effects using shaders should always have a fall back at
+runtime (e.g. GL blend) - no error should be thrown and the mod should remains functional.

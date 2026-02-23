@@ -93,9 +93,11 @@ internal static class HslService
 	internal sealed class HslOverlay : MonoBehaviour
 	{
 		private const string ShaderAssetPath = "Assets/Shaders/BopVisualEffects_HSL.shader";
+		private static readonly ClassLogger _log = ClassLogger.GetForClass<HslOverlay>();
 
 		private static Material? _hslMaterial;
 		private static bool _hslShaderUnavailable;
+		private static bool _hslFallbackLogged;
 		private static Material? _glMaterial;
 
 		/// <summary>
@@ -115,6 +117,7 @@ internal static class HslService
 			if (bundle is null)
 			{
 				_hslShaderUnavailable = true;
+				LogHslFallback("Shader AssetBundle not available");
 				return null;
 			}
 
@@ -122,11 +125,22 @@ internal static class HslService
 			if (shader is null || !shader.isSupported)
 			{
 				_hslShaderUnavailable = true;
+				LogHslFallback("HSL shader missing or unsupported in bundle");
 				return null;
 			}
 
 			_hslMaterial = new Material(shader) { hideFlags = HideFlags.HideAndDontSave };
 			return _hslMaterial;
+		}
+
+		private static void LogHslFallback(string reason)
+		{
+			if (_hslFallbackLogged)
+				return;
+
+			_hslFallbackLogged = true;
+			_log.Warning(
+				$"[HSL] Using GL fallback ({reason}). Hue shift and saturation boost are unavailable without shader bundle.");
 		}
 
 		private static Material? GetGlMaterial()
@@ -288,4 +302,3 @@ internal static class HslService
 		}
 	}
 }
-

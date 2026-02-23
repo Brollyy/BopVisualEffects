@@ -92,9 +92,11 @@ internal static class SepiaService
 	internal sealed class SepiaOverlay : MonoBehaviour
 	{
 		private const string ShaderAssetPath = "Assets/Shaders/BopVisualEffects_Sepia.shader";
+		private static readonly ClassLogger _log = ClassLogger.GetForClass<SepiaOverlay>();
 
 		private static Material? _sepiaMaterial;
 		private static bool _sepiaShaderUnavailable;
+		private static bool _sepiaFallbackLogged;
 		private static Material? _glMaterial;
 
 		/// <summary>
@@ -114,6 +116,7 @@ internal static class SepiaService
 			if (bundle is null)
 			{
 				_sepiaShaderUnavailable = true;
+				LogSepiaFallback("Shader AssetBundle not available");
 				return null;
 			}
 
@@ -121,11 +124,22 @@ internal static class SepiaService
 			if (shader is null || !shader.isSupported)
 			{
 				_sepiaShaderUnavailable = true;
+				LogSepiaFallback("Sepia shader missing or unsupported in bundle");
 				return null;
 			}
 
 			_sepiaMaterial = new Material(shader) { hideFlags = HideFlags.HideAndDontSave };
 			return _sepiaMaterial;
+		}
+
+		private static void LogSepiaFallback(string reason)
+		{
+			if (_sepiaFallbackLogged)
+				return;
+
+			_sepiaFallbackLogged = true;
+			_log.Warning(
+				$"[Sepia] Using GL fallback ({reason}). Sepia uses the approximation path without shader bundle.");
 		}
 
 		private static Material? GetGlMaterial()
@@ -244,4 +258,3 @@ internal static class SepiaService
 		}
 	}
 }
-

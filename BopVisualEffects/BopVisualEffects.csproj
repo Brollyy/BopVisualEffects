@@ -41,6 +41,7 @@
     <PackageReference Include="BepInEx.Core" Version="5.*"/>
     <PackageReference Include="BepInEx.PluginInfoProps" Version="2.*"/>
     <PackageReference Include="Unity3D.UnityEngine" Version="2018.3.5.1" IncludeAssets="compile" Condition="'$(SkipGameReferences)' == 'true'"/>
+    <PackageReference Include="Unity3D.UnityEngine.AssetBundleModule" Version="2018.3.5.1" IncludeAssets="compile" Condition="'$(SkipGameReferences)' == 'true'"/>
     <Reference Include="UnityEngine" Condition="'$(SkipGameReferences)' != 'true' and Exists('$(UnityManagedDir)/UnityEngine.dll')">
       <HintPath>$(UnityManagedDir)/UnityEngine.dll</HintPath>
       <Private>false</Private>
@@ -51,6 +52,10 @@
     </Reference>
     <Reference Include="UnityEngine.IMGUIModule" Condition="'$(SkipGameReferences)' != 'true' and Exists('$(UnityManagedDir)/UnityEngine.IMGUIModule.dll')">
       <HintPath>$(UnityManagedDir)/UnityEngine.IMGUIModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.AssetBundleModule" Condition="'$(SkipGameReferences)' != 'true' and Exists('$(UnityManagedDir)/UnityEngine.AssetBundleModule.dll')">
+      <HintPath>$(UnityManagedDir)/UnityEngine.AssetBundleModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="@(GameLibrary)" Condition="'$(SkipGameReferences)' != 'true' and '$(UnityManagedDir)' != ''">

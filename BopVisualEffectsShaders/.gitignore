@@ -7,6 +7,8 @@
 /[Bb]uilds/
 /[Ll]ogs/
 /[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
 
 # AssetBundle output (built by BuildAssetBundles.cs — committed from the main project instead).
 /AssetBundles/
@@ -16,4 +18,14 @@
 .idea/
 *.csproj
 *.sln
+*.pidb
+*.suo
+*.user
+*.userprefs
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
 ExportedObj/
