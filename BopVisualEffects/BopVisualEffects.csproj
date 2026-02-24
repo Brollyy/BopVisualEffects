@@ -53,10 +53,23 @@
       <HintPath>$(UnityManagedDir)/UnityEngine.IMGUIModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="UnityEngine.AssetBundleModule" Condition="'$(SkipGameReferences)' != 'true' and Exists('$(UnityManagedDir)/UnityEngine.AssetBundleModule.dll')">
+      <HintPath>$(UnityManagedDir)/UnityEngine.AssetBundleModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="@(GameLibrary)" Condition="'$(SkipGameReferences)' != 'true' and '$(UnityManagedDir)' != ''">
       <HintPath>$(UnityManagedDir)/%(Identity).dll</HintPath>
       <Private>false</Private>
     </Reference>
+  </ItemGroup>
+
+  <ItemGroup Condition="Exists('Resources\bopvisualeffects_shaders_win.assetbundle') or Exists('Resources\bopvisualeffects_shaders_osx.assetbundle') or Exists('Resources\bopvisualeffects_shaders_linux.assetbundle')">
+    <EmbeddedResource Include="Resources\bopvisualeffects_shaders_win.assetbundle"
+                      Condition="Exists('Resources\bopvisualeffects_shaders_win.assetbundle')" />
+    <EmbeddedResource Include="Resources\bopvisualeffects_shaders_osx.assetbundle"
+                      Condition="Exists('Resources\bopvisualeffects_shaders_osx.assetbundle')" />
+    <EmbeddedResource Include="Resources\bopvisualeffects_shaders_linux.assetbundle"
+                      Condition="Exists('Resources\bopvisualeffects_shaders_linux.assetbundle')" />
   </ItemGroup>
 
   <Target Name="ValidateTemplateDependencies" BeforeTargets="ResolveReferences" Condition="'$(SkipGameReferences)' != 'true'">

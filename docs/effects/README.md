@@ -71,6 +71,21 @@ Mirrors the screen left-to-right for the duration of the event. Composes correct
 **Properties**
 - `length` (event length in editor): How long the flip lasts, in beats. This event is resizable in the timeline.
 
+## HSL Filter
+
+**DisplayName:** `HSL Filter`
+
+**Config Key:** `Hsl.Enabled`
+
+Adjusts hue, saturation and lightness of the whole screen for creative colour grading using a per-pixel shader. Fades in and out smoothly. Requires the shader AssetBundle to be built from `BopVisualEffectsShaders/` — see that directory's `README.md` for build instructions. Falls back to GL blend operations (saturation/lightness only; no hue rotation) when the bundle is absent.
+
+**Properties**
+- `hue_shift`: Degrees to rotate the hue wheel (-180–180; default `0`). Requires shader bundle; ignored in GL fallback.
+- `saturation`: Saturation multiplier (0 = fully greyscale, 1 = unchanged, >1 = boosted; default `1.0`). Boost above 1 requires shader bundle.
+- `lightness`: Additive lightness offset (-0.5–0.5; default `0`). Positive values brighten, negative values darken.
+- `intensity`: Overall blend strength (0–1; default `1.0`).
+- `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
+
 ## Letterbox
 
 **DisplayName:** `Letterbox`
@@ -121,6 +136,18 @@ Draws animated TV static noise specks over the screen for a glitchy atmosphere. 
 - `alpha`: Maximum opacity of the noise specks (0–1; default `0.5`).
 - `count`: Number of noise specks drawn per frame (10–2000; default `400`).
 - `size`: Physical size of each speck in normalized screen coordinates (0.005–0.1; default `0.01`).
+- `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
+
+## Sepia
+
+**DisplayName:** `Sepia`
+
+**Config Key:** `Sepia.Enabled`
+
+Applies a warm vintage sepia-tone filter using a per-pixel shader (standard Adobe/Kodak sepia matrix). Fades in and out smoothly. Requires the shader AssetBundle to be built from `BopVisualEffectsShaders/` — see that directory's `README.md` for build instructions. Falls back to a three-pass GL approximation (desaturate → amber tint → sepia multiply) when the bundle is absent.
+
+**Properties**
+- `intensity`: Strength of the sepia toning (0–1; default `0.8`).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
 
 ## Vertical Flip
