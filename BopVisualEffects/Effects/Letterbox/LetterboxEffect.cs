@@ -32,7 +32,8 @@ public sealed class LetterboxEffect : IVisualEffectDefinition
 			resizable = true,
 			properties = new Dictionary<string, object>
 			{
-				["size"] = 0.1f
+				["size"] = 0.1f,
+				["easing_curve"] = DefaultEasingCurve()
 			}
 		};
 	}
@@ -43,6 +44,7 @@ public sealed class LetterboxEffect : IVisualEffectDefinition
 		var log = ClassLogger.GetForClass<LetterboxEffect>();
 		var durationBeats = Mathf.Max(0.01f, entity.length);
 		var size = entity.GetFloat("size");
+		var easingCurve = entity.GetAnimationCurve("easing_curve", DefaultEasingCurve());
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
 
@@ -53,9 +55,16 @@ public sealed class LetterboxEffect : IVisualEffectDefinition
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<LetterboxRunner>(runner =>
-				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, size));
+				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, size, easingCurve));
 		}
 	}
+
+	private static AnimationCurve DefaultEasingCurve() => new AnimationCurve(
+		new Keyframe(0f, 0f, 0f, 20f / 3f),
+		new Keyframe(0.15f, 1f, 20f / 3f, 0f),
+		new Keyframe(0.85f, 1f, 0f, -20f / 3f),
+		new Keyframe(1f, 0f, -20f / 3f, 0f)
+	);
 
 	private sealed class LetterboxRunner : MonoBehaviour
 	{
@@ -66,17 +75,19 @@ public sealed class LetterboxEffect : IVisualEffectDefinition
 		private MixtapeLoaderCustom? _loader;
 		private JukeboxScript? _jukebox;
 		private LetterboxOverlay? _overlay;
+		private AnimationCurve _easingCurve = AnimationCurve.Linear(0f, 1f, 1f, 1f);
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float size)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float size, AnimationCurve easingCurve)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
 			_startBeat = startBeat;
 			_endBeat = endBeat;
 			_size = Mathf.Clamp(size, 0f, 0.49f);
+			_easingCurve = easingCurve;
 			InitializeOverlay();
 		}
 
@@ -113,13 +124,7 @@ public sealed class LetterboxEffect : IVisualEffectDefinition
 
 			// Slide bars in over first 15%, hold, slide out over last 15%.
 			var progress = Mathf.InverseLerp(_startBeat, _endBeat, currentBeat);
-			float envelope;
-			if (progress < 0.15f)
-				envelope = Mathf.InverseLerp(0f, 0.15f, progress);
-			else if (progress > 0.85f)
-				envelope = 1f - Mathf.InverseLerp(0.85f, 1f, progress);
-			else
-				envelope = 1f;
+			var envelope = _easingCurve.Evaluate(progress);
 
 			if (_overlay != null)
 				_overlay.SetParams(_size * envelope);

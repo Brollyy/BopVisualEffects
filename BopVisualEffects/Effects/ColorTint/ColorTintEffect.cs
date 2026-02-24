@@ -32,7 +32,8 @@ public sealed class ColorTintEffect : IVisualEffectDefinition
 			resizable = true,
 			properties = new Dictionary<string, object>
 			{
-				["color"] = new MixtapeEventTemplates.ColorField(new Color(1.0f, 0.0f, 0.0f, 0.25f))
+				["color"] = new MixtapeEventTemplates.ColorField(new Color(1.0f, 0.0f, 0.0f, 0.25f)),
+				["easing_curve"] = DefaultEasingCurve()
 			}
 		};
 	}
@@ -43,6 +44,7 @@ public sealed class ColorTintEffect : IVisualEffectDefinition
 		var log = ClassLogger.GetForClass<ColorTintEffect>();
 		var durationBeats = Mathf.Max(0.01f, entity.length);
 		var color = entity.GetColor("color");
+		var easingCurve = entity.GetAnimationCurve("easing_curve", DefaultEasingCurve());
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
 
@@ -53,9 +55,16 @@ public sealed class ColorTintEffect : IVisualEffectDefinition
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<ColorTintRunner>(runner =>
-				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, color));
+				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, color, easingCurve));
 		}
 	}
+
+	private static AnimationCurve DefaultEasingCurve() => new AnimationCurve(
+		new Keyframe(0f, 0f, 0f, 5f),
+		new Keyframe(0.2f, 1f, 5f, 0f),
+		new Keyframe(0.8f, 1f, 0f, -5f),
+		new Keyframe(1f, 0f, -5f, 0f)
+	);
 
 	private sealed class ColorTintRunner : MonoBehaviour
 	{
@@ -66,17 +75,19 @@ public sealed class ColorTintEffect : IVisualEffectDefinition
 		private MixtapeLoaderCustom? _loader;
 		private JukeboxScript? _jukebox;
 		private ColorTintOverlay? _overlay;
+		private AnimationCurve _easingCurve = AnimationCurve.Linear(0f, 1f, 1f, 1f);
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, Color color)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, Color color, AnimationCurve easingCurve)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
 			_startBeat = startBeat;
 			_endBeat = endBeat;
 			_color = new Color(Mathf.Clamp01(color.r), Mathf.Clamp01(color.g), Mathf.Clamp01(color.b), Mathf.Clamp01(color.a));
+			_easingCurve = easingCurve;
 			InitializeOverlay();
 		}
 
@@ -113,13 +124,7 @@ public sealed class ColorTintEffect : IVisualEffectDefinition
 
 			// Fade in over first 20%, hold, fade out over last 20%.
 			var progress = Mathf.InverseLerp(_startBeat, _endBeat, currentBeat);
-			float envelope;
-			if (progress < 0.2f)
-				envelope = Mathf.InverseLerp(0f, 0.2f, progress);
-			else if (progress > 0.8f)
-				envelope = 1f - Mathf.InverseLerp(0.8f, 1f, progress);
-			else
-				envelope = 1f;
+			var envelope = _easingCurve.Evaluate(progress);
 
 			if (_overlay != null)
 				_overlay.SetColor(new Color(_color.r, _color.g, _color.b, _color.a * envelope));

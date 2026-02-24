@@ -33,7 +33,8 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 			resizable = true,
 			properties = new Dictionary<string, object>
 			{
-				["pixel_size"] = 4.0f
+				["pixel_size"] = 4.0f,
+				["easing_curve"] = DefaultEasingCurve()
 			}
 		};
 	}
@@ -44,6 +45,7 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 		var log = ClassLogger.GetForClass<PixelGridEffect>();
 		var durationBeats = Mathf.Max(0.01f, entity.length);
 		var pixelSize = entity.GetFloat("pixel_size");
+		var easingCurve = entity.GetAnimationCurve("easing_curve", DefaultEasingCurve());
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
 
@@ -54,9 +56,16 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<PixelGridRunner>(runner =>
-				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, pixelSize));
+				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, pixelSize, easingCurve));
 		}
 	}
+
+	private static AnimationCurve DefaultEasingCurve() => new AnimationCurve(
+		new Keyframe(0f, 0f, 0f, 20f / 3f),
+		new Keyframe(0.15f, 1f, 20f / 3f, 0f),
+		new Keyframe(0.85f, 1f, 0f, -20f / 3f),
+		new Keyframe(1f, 0f, -20f / 3f, 0f)
+	);
 
 	private sealed class PixelGridRunner : MonoBehaviour
 	{
@@ -67,17 +76,19 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 		private MixtapeLoaderCustom? _loader;
 		private JukeboxScript? _jukebox;
 		private PixelGridOverlay? _overlay;
+		private AnimationCurve _easingCurve = AnimationCurve.Linear(0f, 1f, 1f, 1f);
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float pixelSize)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float pixelSize, AnimationCurve easingCurve)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
 			_startBeat = startBeat;
 			_endBeat = endBeat;
 			_pixelSize = Mathf.Clamp(Mathf.RoundToInt(pixelSize), 2, 64);
+			_easingCurve = easingCurve;
 			InitializeOverlay();
 		}
 
@@ -115,13 +126,7 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 			// Ramp block size up over first 15%, hold, ramp down over last 15%.
 			// block_size=1 means no pixelation; ramping from 1 → _pixelSize gives a "zooming into pixels" look.
 			var progress = Mathf.InverseLerp(_startBeat, _endBeat, currentBeat);
-			float envelope;
-			if (progress < 0.15f)
-				envelope = Mathf.InverseLerp(0f, 0.15f, progress);
-			else if (progress > 0.85f)
-				envelope = 1f - Mathf.InverseLerp(0.85f, 1f, progress);
-			else
-				envelope = 1f;
+			var envelope = _easingCurve.Evaluate(progress);
 
 			var currentBlockSize = Mathf.Max(1, Mathf.RoundToInt(Mathf.Lerp(1f, _pixelSize, envelope)));
 			if (_overlay != null)

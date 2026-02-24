@@ -31,7 +31,8 @@ public sealed class CameraTiltEffect : IVisualEffectDefinition
 			resizable = true,
 			properties = new Dictionary<string, object>
 			{
-				["angle"] = 5.0f
+				["angle"] = 5.0f,
+				["easing_curve"] = DefaultEasingCurve()
 			}
 		};
 	}
@@ -42,6 +43,7 @@ public sealed class CameraTiltEffect : IVisualEffectDefinition
 		var log = ClassLogger.GetForClass<CameraTiltEffect>();
 		var durationBeats = Mathf.Max(0.01f, entity.length);
 		var angle = entity.GetFloat("angle");
+		var easingCurve = entity.GetAnimationCurve("easing_curve", DefaultEasingCurve());
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
 
@@ -52,9 +54,15 @@ public sealed class CameraTiltEffect : IVisualEffectDefinition
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<CameraTiltRunner>(runner =>
-				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, angle));
+				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, angle, easingCurve));
 		}
 	}
+
+	private static AnimationCurve DefaultEasingCurve() => new AnimationCurve(
+		new Keyframe(0f, 0f, 0f, Mathf.PI),
+		new Keyframe(0.5f, 1f, 0f, 0f),
+		new Keyframe(1f, 0f, -Mathf.PI, 0f)
+	);
 
 	private sealed class CameraTiltRunner : MonoBehaviour
 	{
@@ -66,17 +74,19 @@ public sealed class CameraTiltEffect : IVisualEffectDefinition
 		private JukeboxScript? _jukebox;
 		private Transform? _targetTransform;
 		private Quaternion _initialLocalRotation;
+		private AnimationCurve _easingCurve = AnimationCurve.Linear(0f, 1f, 1f, 1f);
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float angle)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float angle, AnimationCurve easingCurve)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
 			_startBeat = startBeat;
 			_endBeat = endBeat;
 			_angle = angle;
+			_easingCurve = easingCurve;
 			InitializeTargetCamera();
 		}
 
@@ -111,9 +121,9 @@ public sealed class CameraTiltEffect : IVisualEffectDefinition
 				return;
 			}
 
-			// Swing tilt: rotate in one direction and back (full sine wave over the duration).
+			// Swing tilt: rotate in one direction and back (configurable curve over the duration).
 			var progress = Mathf.InverseLerp(_startBeat, _endBeat, currentBeat);
-			var tiltAngle = _angle * Mathf.Sin(progress * Mathf.PI);
+			var tiltAngle = _angle * _easingCurve.Evaluate(progress);
 
 			_targetTransform!.localRotation = _initialLocalRotation * Quaternion.Euler(0f, 0f, tiltAngle);
 		}
