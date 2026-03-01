@@ -27,8 +27,6 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <SkipGameReferences Condition="'$(SkipGameReferences)' == '' and '$(GITHUB_ACTIONS)' == 'true'">true</SkipGameReferences>
-    <DefineConstants Condition="'$(SkipGameReferences)' == 'true'">$(DefineConstants);SKIP_GAME_REFERENCES</DefineConstants>
     <GameRoot Condition="'$(GameRoot)' == '' and '$(BOP_GAME_ROOT)' != ''">$(BOP_GAME_ROOT)</GameRoot>
     <BepInExRoot Condition="'$(GameRoot)' != ''">$(GameRoot)/BepInEx</BepInExRoot>
     <BepInExPluginsDir Condition="'$(GameRoot)' != ''">$(GameRoot)/BepInEx/plugins</BepInExPluginsDir>
@@ -40,24 +38,24 @@
     <PackageReference Include="BepInEx.Analyzers" Version="1.*" PrivateAssets="all"/>
     <PackageReference Include="BepInEx.Core" Version="5.*"/>
     <PackageReference Include="BepInEx.PluginInfoProps" Version="2.*"/>
-    <PackageReference Include="Unity3D.UnityEngine" Version="2018.3.5.1" IncludeAssets="compile" Condition="'$(SkipGameReferences)' == 'true'"/>
-    <Reference Include="UnityEngine" Condition="'$(SkipGameReferences)' != 'true' and Exists('$(UnityManagedDir)/UnityEngine.dll')">
+    <PackageReference Include="Unity3D.UnityEngine" Version="2018.3.5.1" IncludeAssets="compile"/>
+    <Reference Include="UnityEngine" Condition="Exists('$(UnityManagedDir)/UnityEngine.dll')">
       <HintPath>$(UnityManagedDir)/UnityEngine.dll</HintPath>
       <Private>false</Private>
     </Reference>
-    <Reference Include="UnityEngine.CoreModule" Condition="'$(SkipGameReferences)' != 'true' and Exists('$(UnityManagedDir)/UnityEngine.CoreModule.dll')">
+    <Reference Include="UnityEngine.CoreModule" Condition="Exists('$(UnityManagedDir)/UnityEngine.CoreModule.dll')">
       <HintPath>$(UnityManagedDir)/UnityEngine.CoreModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
-    <Reference Include="UnityEngine.IMGUIModule" Condition="'$(SkipGameReferences)' != 'true' and Exists('$(UnityManagedDir)/UnityEngine.IMGUIModule.dll')">
+    <Reference Include="UnityEngine.IMGUIModule" Condition="Exists('$(UnityManagedDir)/UnityEngine.IMGUIModule.dll')">
       <HintPath>$(UnityManagedDir)/UnityEngine.IMGUIModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
-    <Reference Include="UnityEngine.AssetBundleModule" Condition="'$(SkipGameReferences)' != 'true' and Exists('$(UnityManagedDir)/UnityEngine.AssetBundleModule.dll')">
+    <Reference Include="UnityEngine.AssetBundleModule" Condition="Exists('$(UnityManagedDir)/UnityEngine.AssetBundleModule.dll')">
       <HintPath>$(UnityManagedDir)/UnityEngine.AssetBundleModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
-    <Reference Include="@(GameLibrary)" Condition="'$(SkipGameReferences)' != 'true' and '$(UnityManagedDir)' != ''">
+    <Reference Include="@(GameLibrary)" Condition="'$(UnityManagedDir)' != ''">
       <HintPath>$(UnityManagedDir)/%(Identity).dll</HintPath>
       <Private>false</Private>
     </Reference>
@@ -72,7 +70,7 @@
                       Condition="Exists('Resources\bopvisualeffects_shaders_linux.assetbundle')" />
   </ItemGroup>
 
-  <Target Name="ValidateTemplateDependencies" BeforeTargets="ResolveReferences" Condition="'$(SkipGameReferences)' != 'true'">
+  <Target Name="ValidateTemplateDependencies" BeforeTargets="ResolveReferences">
     <ItemGroup>
       <MissingGameLibrary Include="@(GameLibrary)"
                           Condition="'$(UnityManagedDir)' != '' and !Exists('$(UnityManagedDir)/%(Identity).dll')"/>
@@ -86,7 +84,7 @@
 
   <Target Name="CopyPluginToBepInEx"
           AfterTargets="PostBuildEvent"
-          Condition="'$(SkipGameReferences)' != 'true' and '$(BepInExPluginsDir)' != '' and Exists('$(BepInExPluginsDir)')">
+          Condition="'$(BepInExPluginsDir)' != '' and Exists('$(BepInExPluginsDir)')">
     <Message Importance="High" Text="Copying $(TargetFileName) to $(BepInExPluginsDir)"/>
     <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(BepInExPluginsDir)" SkipUnchangedFiles="true"/>
   </Target>

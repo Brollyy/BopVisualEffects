@@ -1,0 +1,74 @@
+name: Setup Game DLLs
+
+on:
+  workflow_call:
+    secrets:
+      STEAM_USERNAME:
+        required: true
+      STEAM_PASSWORD:
+        required: true
+
+jobs:
+  download-dlls:
+    runs-on: ubuntu-latest
+    permissions: {}
+
+    steps:
+      - name: Restore game DLLs from cache
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: ~/bits-and-bops/Bits & Bops_Data/Managed
+          key: bits-and-bops-managed-${{ github.sha }}
+          restore-keys: bits-and-bops-managed-
+
+      - name: Download game DLLs using SteamCMD
+        env:
+          STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
+          STEAM_PASSWORD: ${{ secrets.STEAM_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          # Skip download if DLLs are already cached
+          if [ -d "$HOME/bits-and-bops/Bits & Bops_Data/Managed" ] && [ -n "$(ls -A "$HOME/bits-and-bops/Bits & Bops_Data/Managed" 2>/dev/null)" ]; then
+            echo "Game DLLs found in cache, skipping download"
+            exit 0
+          fi
+
+          if [ -z "$STEAM_USERNAME" ] || [ -z "$STEAM_PASSWORD" ]; then
+            echo "Error: STEAM_USERNAME and STEAM_PASSWORD secrets are not set"
+            echo "Configure Steam credentials in repository secrets:"
+            echo "1. Go to Settings > Secrets and variables > Actions"
+            echo "2. Add STEAM_USERNAME and STEAM_PASSWORD"
+            echo ""
+            echo "IMPORTANT: Use a dedicated Steam account WITHOUT 2FA/Steam Guard enabled."
+            echo "SteamCMD cannot handle 2FA in automated environments."
+            exit 1
+          fi
+
+          # Install SteamCMD
+          mkdir -p ~/steamcmd
+          cd ~/steamcmd
+          curl -sqL "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" | tar zxvf -
+
+          GAME_DIR="$HOME/bits-and-bops"
+          mkdir -p "$GAME_DIR"
+
+          # Download Bits & Bops (App ID: 1929290)
+          # NOTE: This will FAIL if the Steam account has 2FA/Steam Guard enabled
+          echo "Downloading Bits & Bops from Steam..."
+          ./steamcmd.sh +force_install_dir "$GAME_DIR" \
+            +login "$STEAM_USERNAME" "$STEAM_PASSWORD" \
+            +app_update 1929290 validate \
+            +quit
+
+          echo "Game DLLs downloaded successfully"
+          ls "$GAME_DIR/Bits & Bops_Data/Managed/" | wc -l
+          echo "DLLs found in managed directory"
+
+      - name: Upload game DLLs as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: game-dlls
+          path: ~/bits-and-bops/Bits & Bops_Data/Managed
+          retention-days: 1

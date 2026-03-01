@@ -9,7 +9,14 @@ permissions:
   contents: read
 
 jobs:
-  build-on-pr:
+  setup-game-dlls:
+    uses: ./.github/workflows/setup-game-dlls.yml
+    secrets:
+      STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
+      STEAM_PASSWORD: ${{ secrets.STEAM_PASSWORD }}
+
+  build:
+    needs: setup-game-dlls
     runs-on: ubuntu-latest
 
     steps:
@@ -21,8 +28,25 @@ jobs:
         with:
           dotnet-version: 9.0.x
 
+      - name: Download game DLLs artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: game-dlls
+          path: ~/bits-and-bops/Bits & Bops_Data/Managed
+
+      - name: Create BopVisualEffects.user.props
+        run: |
+          mkdir -p BopVisualEffects
+          cat > BopVisualEffects/BopVisualEffects.user.props << EOF
+          <Project>
+            <PropertyGroup>
+              <GameRoot>$HOME/bits-and-bops</GameRoot>
+            </PropertyGroup>
+          </Project>
+          EOF
+
       - name: Restore
-        run: dotnet restore BopVisualEffects.sln -p:SkipGameReferences=true
+        run: dotnet restore BopVisualEffects.sln
 
       - name: Build
-        run: dotnet build BopVisualEffects.sln -c Release -p:SkipGameReferences=true --no-restore
+        run: dotnet build BopVisualEffects.sln -c Release --no-restore
