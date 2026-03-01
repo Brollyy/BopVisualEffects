@@ -19,8 +19,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/bits-and-bops/Bits & Bops_Data/Managed
-          key: bits-and-bops-managed-${{ github.sha }}
-          restore-keys: bits-and-bops-managed-
+          key: bits-and-bops-1929290-managed-${{ runner.os }}-v1
+          restore-keys: bits-and-bops-1929290-managed-${{ runner.os }}-
 
       - name: Download game DLLs using SteamCMD
         env:
