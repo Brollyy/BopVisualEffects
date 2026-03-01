@@ -32,10 +32,7 @@ public sealed class FogEffect : IVisualEffectDefinition
 			resizable = true,
 			properties = new Dictionary<string, object>
 			{
-				["r"] = 0.8f,
-				["g"] = 0.8f,
-				["b"] = 0.9f,
-				["alpha"] = 0.6f,
+				["color"] = new MixtapeEventTemplates.ColorField(new Color(0.8f, 0.8f, 0.9f, 0.6f)),
 				["height"] = 0.5f
 			}
 		};
@@ -46,10 +43,7 @@ public sealed class FogEffect : IVisualEffectDefinition
 	{
 		var log = ClassLogger.GetForClass<FogEffect>();
 		var durationBeats = Mathf.Max(0.01f, entity.length);
-		var r = entity.GetFloat("r");
-		var g = entity.GetFloat("g");
-		var b = entity.GetFloat("b");
-		var alpha = entity.GetFloat("alpha");
+		var color = entity.GetColor("color");
 		var height = entity.GetFloat("height");
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
@@ -61,17 +55,14 @@ public sealed class FogEffect : IVisualEffectDefinition
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<FogRunner>(runner =>
-				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, r, g, b, alpha, height));
+				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, color, height));
 		}
 	}
 
 	private sealed class FogRunner : MonoBehaviour
 	{
 		private bool _initialized;
-		private float _r;
-		private float _g;
-		private float _b;
-		private float _maxAlpha;
+		private Color _color;
 		private float _height;
 		private float _startBeat;
 		private float _endBeat;
@@ -82,16 +73,13 @@ public sealed class FogEffect : IVisualEffectDefinition
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float r, float g, float b, float alpha, float height)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, Color color, float height)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
 			_startBeat = startBeat;
 			_endBeat = endBeat;
-			_r = Mathf.Clamp01(r);
-			_g = Mathf.Clamp01(g);
-			_b = Mathf.Clamp01(b);
-			_maxAlpha = Mathf.Clamp01(alpha);
+			_color = new Color(Mathf.Clamp01(color.r), Mathf.Clamp01(color.g), Mathf.Clamp01(color.b), Mathf.Clamp01(color.a));
 			_height = Mathf.Clamp01(height);
 			InitializeOverlay();
 		}
@@ -138,7 +126,7 @@ public sealed class FogEffect : IVisualEffectDefinition
 				envelope = 1f;
 
 			if (_overlay != null)
-				_overlay.SetParams(_r, _g, _b, _maxAlpha * envelope, _height);
+				_overlay.SetParams(new Color(_color.r, _color.g, _color.b, _color.a * envelope), _height);
 		}
 
 		private void OnDisable()
@@ -153,7 +141,7 @@ public sealed class FogEffect : IVisualEffectDefinition
 				return;
 
 			_overlay = camera.gameObject.AddComponent<FogOverlay>();
-			_overlay.SetParams(_r, _g, _b, _maxAlpha, _height);
+			_overlay.SetParams(_color, _height);
 			_initialized = true;
 		}
 
@@ -175,21 +163,15 @@ public sealed class FogEffect : IVisualEffectDefinition
 	private sealed class FogOverlay : MonoBehaviour
 	{
 		private static Material? _material;
-		private float _r;
-		private float _g;
-		private float _b;
-		private float _alpha;
+		private Color _color;
 		private float _height;
 
 		/// <summary>
 		/// Updates the overlay parameters.
 		/// </summary>
-		public void SetParams(float r, float g, float b, float alpha, float height)
+		public void SetParams(Color color, float height)
 		{
-			_r = r;
-			_g = g;
-			_b = b;
-			_alpha = alpha;
+			_color = color;
 			_height = height;
 		}
 
@@ -214,7 +196,7 @@ public sealed class FogEffect : IVisualEffectDefinition
 		// Unity calls this on the camera's GameObject after it finishes rendering the scene.
 		private void OnPostRender()
 		{
-			if (_alpha <= 0f || _height <= 0f)
+			if (_color.a <= 0f || _height <= 0f)
 				return;
 
 			var mat = GetMaterial();
@@ -224,18 +206,17 @@ public sealed class FogEffect : IVisualEffectDefinition
 			mat.SetPass(0);
 
 			// Ground fog: opaque at y=0 (bottom), fades to transparent at y=_height.
-			var fogColor = new Color(_r, _g, _b, _alpha);
-			var clear = new Color(_r, _g, _b, 0f);
+			var clear = new Color(_color.r, _color.g, _color.b, 0f);
 
 			GL.PushMatrix();
 			GL.LoadOrtho();
 			GL.Begin(GL.QUADS);
 
 			// Bottom-left → top-left → top-right → bottom-right
-			GL.Color(fogColor); GL.Vertex3(0f, 0f, 0f);
+			GL.Color(_color); GL.Vertex3(0f, 0f, 0f);
 			GL.Color(clear); GL.Vertex3(0f, _height, 0f);
 			GL.Color(clear); GL.Vertex3(1f, _height, 0f);
-			GL.Color(fogColor); GL.Vertex3(1f, 0f, 0f);
+			GL.Color(_color); GL.Vertex3(1f, 0f, 0f);
 
 			GL.End();
 			GL.PopMatrix();
