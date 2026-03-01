@@ -15,11 +15,9 @@ Adds a temporary camera shake effect for impact, hits, drops, or strong rhythm a
 - `frequency`: Speed of the shake movement.
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
 
-**Preview media**
+**Preview**
 
-![Camera Shake preview](camera-shake/preview.gif)
-
-[Watch video preview](camera-shake/demo.mp4)
+<video src="https://youtu.be/9YBuEKdRlTk"></video>
 
 ## Camera Tilt
 
