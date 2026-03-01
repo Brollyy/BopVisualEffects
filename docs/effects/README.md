@@ -17,7 +17,7 @@ Adds a temporary camera shake effect for impact, hits, drops, or strong rhythm a
 
 **Preview**
 
-<video src="https://youtu.be/9YBuEKdRlTk"></video>
+[![Watch the video](https://img.youtube.com/vi/9YBuEKdRlTk/maxresdefault.jpg)](https://youtu.be/9YBuEKdRlTk)
 
 ## Camera Tilt
 
