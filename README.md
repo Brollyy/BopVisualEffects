@@ -47,10 +47,8 @@ If `BepInExPluginsDir` exists, build output is copied there automatically.
 4. Add a dedicated runtime runner `MonoBehaviour` for the effect (in the same file or a sibling file).
 5. Implement `TrySchedule` to read entity properties and spawn your runner through `EffectRuntimeController.Instance.SpawnRunner<T>(...)`.
 6. Register the effect once in `EffectDefinitionRegistry.Initialize(...)` using `Register(new YourEffect())`.
-7. Add media for documentation:
-   - `docs/effects/<effect-id>/preview.gif`
-   - `docs/effects/<effect-id>/demo.mp4`
-8. Update `docs/effects/README.md`.
+7. Record a short `.mp4` preview video showing the event selected with its properties and the effect being applied in the editor. Upload it to GitHub (e.g. by attaching it to a PR comment or issue) and copy the resulting link.
+8. Update `docs/effects/README.md` and include the uploaded video link under the **Preview** section for the new effect.
 
 ### Pull requests
 

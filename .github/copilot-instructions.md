@@ -56,7 +56,7 @@ Each effect follows this structure:
 2. A dedicated `MonoBehaviour` runner (nested in the same file or a sibling file) spawned via `EffectRuntimeController.Instance.SpawnRunner<T>(...)` inside `TrySchedule`.
 3. The runner handles timing (start/end beat), per-frame updates in `LateUpdate`, and cleanup in `Stop`/`OnDisable`.
 4. Registration via `EffectDefinitionRegistry.Initialize(...)` using `Register(new YourEffect())`.
-5. Documentation media at `docs/effects/<effect-id>/preview.gif` and `docs/effects/<effect-id>/demo.mp4`, and an entry in `docs/effects/README.md`.
+5. A short `.mp4` preview video (uploaded to GitHub, not stored in the repository) showing the event selected with its properties and the effect being applied in the editor, with the link included in `docs/effects/README.md` under the **Preview** section. Since agents cannot run the game to record this, include the following placeholder instead and leave it for the PR author to replace: `<!-- TODO: record preview .mp4 in-game, upload to GitHub, and replace this placeholder with the link -->`.
 
 **Handling effect conflicts and concurrent instances:**
 - Before implementing a new effect, consider how it interacts with all existing effects when running simultaneously.
