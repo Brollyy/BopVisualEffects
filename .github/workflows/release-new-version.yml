@@ -23,6 +23,7 @@ jobs:
       - name: Checkout master
         uses: actions/checkout@v4
         with:
+          token: ${{ secrets.RELEASE_TOKEN }}
           fetch-depth: 0
           ref: master
 
@@ -61,7 +62,7 @@ jobs:
           git add BopVisualEffects/BopVisualEffects.csproj
           if git diff --cached --quiet; then
             echo "No version change detected." >&2
-            exit 1
+            exit 0
           fi
 
           git commit -m "chore: bump version to v${VERSION}"
@@ -76,15 +77,24 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "commit_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
+  setup-game-dlls:
+    uses: ./.github/workflows/setup-game-dlls.yml
+    secrets:
+      STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
+      STEAM_PASSWORD: ${{ secrets.STEAM_PASSWORD }}
+
   deploy-release-environment:
     runs-on: ubuntu-latest
-    needs: bump-version
+    needs: 
+      - bump-version
+      - setup-game-dlls
     environment: release
 
     steps:
       - name: Checkout bumped commit
         uses: actions/checkout@v4
         with:
+          token: ${{ secrets.RELEASE_TOKEN }}
           fetch-depth: 0
           ref: ${{ needs.bump-version.outputs.commit_sha }}
 
@@ -93,11 +103,28 @@ jobs:
         with:
           dotnet-version: 9.0.x
 
+      - name: Download game DLLs artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: game-dlls
+          path: ~/bits-and-bops/Bits & Bops_Data/Managed
+
+      - name: Create BopVisualEffects.user.props
+        run: |
+          mkdir -p BopVisualEffects
+          cat > BopVisualEffects/BopVisualEffects.user.props << EOF
+          <Project>
+            <PropertyGroup>
+              <GameRoot>$HOME/bits-and-bops</GameRoot>
+            </PropertyGroup>
+          </Project>
+          EOF
+
       - name: Restore
-        run: dotnet restore BopVisualEffects.sln -p:SkipGameReferences=true
+        run: dotnet restore BopVisualEffects.sln
 
       - name: Build Release
-        run: dotnet build BopVisualEffects.sln -c Release -p:SkipGameReferences=true --no-restore
+        run: dotnet build BopVisualEffects.sln -c Release --no-restore
 
       - name: Package release artifact
         run: |
@@ -128,12 +155,14 @@ jobs:
       - name: Checkout master
         uses: actions/checkout@v4
         with:
+          token: ${{ secrets.RELEASE_TOKEN }}
           fetch-depth: 0
           ref: master
 
       - name: Download built artifact
         uses: actions/download-artifact@v4
         with:
+          github-token: ${{ secrets.RELEASE_TOKEN }}
           name: BopVisualEffects-v${{ needs.bump-version.outputs.version }}
           path: dist
 
@@ -149,6 +178,7 @@ jobs:
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
+          token: ${{ secrets.RELEASE_TOKEN }}
           tag_name: v${{ needs.bump-version.outputs.version }}
           name: v${{ needs.bump-version.outputs.version }}
           files: dist/*
