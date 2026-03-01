@@ -17,7 +17,6 @@ using BopVisualEffects.Effects.VerticalFlip;
 using BopVisualEffects.Effects.Vignette;
 using BopVisualEffects.Effects.ZoomIn;
 using BopVisualEffects.Effects.ZoomOut;
-using BopVisualEffects.Effects.ZoomPulse;
 
 namespace BopVisualEffects.Core;
 
@@ -70,7 +69,6 @@ public sealed class EffectDefinitionRegistry
 		registry.Register(new VignetteEffect());
 		registry.Register(new ZoomInEffect());
 		registry.Register(new ZoomOutEffect());
-		registry.Register(new ZoomPulseEffect());
 		_instance = registry;
 	}
 

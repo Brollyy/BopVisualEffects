@@ -15,11 +15,9 @@ Adds a temporary camera shake effect for impact, hits, drops, or strong rhythm a
 - `frequency`: Speed of the shake movement.
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
 
-**Preview media**
+**Preview**
 
-![Camera Shake preview](camera-shake/preview.gif)
-
-[Watch video preview](camera-shake/demo.mp4)
+https://github.com/user-attachments/assets/7c0a6e5e-4b7b-45ae-9be7-bef0b399b7b1
 
 ## Camera Tilt
 
@@ -27,11 +25,15 @@ Adds a temporary camera shake effect for impact, hits, drops, or strong rhythm a
 
 **Config Key:** `CameraTilt.Enabled`
 
-Briefly tilts the camera on its Z-axis with a smooth swing arc. Great for expressive rhythm accents and musical phrases in a cartoonish style.
+Briefly tilts the camera on its Z-axis with a smooth swing arc.
 
 **Properties**
 - `angle`: Maximum tilt angle in degrees (positive = counter-clockwise).
 - `length` (event length in editor): How long the tilt lasts, in beats. This event is resizable in the timeline.
+
+**Preview**
+
+https://github.com/user-attachments/assets/79927ec8-175f-4c43-ab05-3cdffa6b753f
 
 ## Color Tint
 
@@ -39,12 +41,15 @@ Briefly tilts the camera on its Z-axis with a smooth swing arc. Great for expres
 
 **Config Key:** `ColorTint.Enabled`
 
-Applies a sustained full-screen color tint that fades in, holds, then fades out. Perfect for horror (red), sepia (warm), or supernatural (purple) atmospheres.
+Applies a sustained full-screen color tint that fades in, holds, then fades out.
 
 **Properties**
-- `r`, `g`, `b`: Tint color (0–1 each; default `1, 0, 0` — red).
-- `alpha`: Maximum opacity (0–1; default `0.25`).
+- `color`: Tint color (default `#ff000040` — red with slight opacity).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
+
+**Preview**
+
+https://github.com/user-attachments/assets/434d016e-1cc6-4503-98f6-6affb074c270
 
 ## Fog
 
@@ -52,13 +57,16 @@ Applies a sustained full-screen color tint that fades in, holds, then fades out.
 
 **Config Key:** `Fog.Enabled`
 
-Draws a ground fog gradient overlay — opaque at the bottom of the screen, fading to transparent at the specified height. Works in both 2D and 3D scenes. Fades in and out smoothly.
+Draws a ground fog gradient overlay - opaque at the bottom of the screen, fading to transparent at the specified height. Fades in and out smoothly.
 
 **Properties**
-- `r`, `g`, `b`: Fog color (0–1 each; default `0.8, 0.8, 0.9` — pale blue-grey).
-- `alpha`: Maximum opacity at the bottom of the screen (0–1; default `0.6`).
+- `color`: Fog color (default `#CCCCE599` - pale blue-gray).
 - `height`: Normalized screen height at which the fog fully fades to transparent (0–1; default `0.5`).
 - `length` (event length in editor): How long the fog lasts, in beats. This event is resizable in the timeline.
+
+**Preview**
+
+https://github.com/user-attachments/assets/d6c128bb-7b45-4654-9265-a0499195218a
 
 ## Horizontal Flip
 
@@ -66,10 +74,14 @@ Draws a ground fog gradient overlay — opaque at the bottom of the screen, fadi
 
 **Config Key:** `HorizontalFlip.Enabled`
 
-Mirrors the screen left-to-right for the duration of the event. Composes correctly with Vertical Flip and zoom effects.
+Mirrors the screen left-to-right for the duration of the event. Composes with Vertical Flip and zoom effects.
 
 **Properties**
 - `length` (event length in editor): How long the flip lasts, in beats. This event is resizable in the timeline.
+
+**Preview**
+
+https://github.com/user-attachments/assets/a2a1ca7b-ff89-446f-a28d-326a0a86df50
 
 ## HSL Filter
 
@@ -77,7 +89,7 @@ Mirrors the screen left-to-right for the duration of the event. Composes correct
 
 **Config Key:** `Hsl.Enabled`
 
-Adjusts hue, saturation and lightness of the whole screen for creative colour grading using a per-pixel shader. Fades in and out smoothly. Requires the shader AssetBundle to be built from `BopVisualEffectsShaders/` — see that directory's `README.md` for build instructions. Falls back to GL blend operations (saturation/lightness only; no hue rotation) when the bundle is absent.
+Adjusts hue, saturation and lightness of the whole screen for colour grading using a per-pixel shader. Fades in and out smoothly.
 
 **Properties**
 - `hue_shift`: Degrees to rotate the hue wheel (-180–180; default `0`). Requires shader bundle; ignored in GL fallback.
@@ -85,6 +97,10 @@ Adjusts hue, saturation and lightness of the whole screen for creative colour gr
 - `lightness`: Additive lightness offset (-0.5–0.5; default `0`). Positive values brighten, negative values darken.
 - `intensity`: Overall blend strength (0–1; default `1.0`).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
+
+**Preview**
+
+https://github.com/user-attachments/assets/75390981-e2cb-4c9f-8796-28dbf8b0462e
 
 ## Letterbox
 
@@ -98,6 +114,10 @@ Adds cinematic black bars at the top and bottom of the screen for a dramatic wid
 - `size`: Height of each bar as a normalized screen fraction (0–0.49; default `0.1`).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
 
+**Preview**
+
+https://github.com/user-attachments/assets/cdb0a74d-9a72-4efd-9d15-b83b5d19998b
+
 ## Pixel Grid
 
 **DisplayName:** `Pixel Grid`
@@ -110,13 +130,17 @@ Pixelates the screen by downsampling the camera's rendered output to a low-resol
 - `pixel_size`: Size of each pixel block in screen pixels (2–64; default `4`). Larger values produce a more pronounced 8-bit look.
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
 
+**Preview**
+
+https://github.com/user-attachments/assets/ea81aebd-35ad-4002-82c5-fab4a258e7d2
+
 ## Scanlines
 
 **DisplayName:** `Scanlines`
 
 **Config Key:** `Scanlines.Enabled`
 
-Draws horizontal CRT-style scan lines over the screen for a retro 8-bit aesthetic. Can optionally scroll up or down continuously. Fades in and out smoothly.
+Draws horizontal CRT-style scan lines over the screen for a retro aesthetic. Can optionally scroll up or down continuously. Fades in and out smoothly.
 
 **Properties**
 - `alpha`: Darkness of each scan line (0–1; default `0.35`).
@@ -124,13 +148,17 @@ Draws horizontal CRT-style scan lines over the screen for a retro 8-bit aestheti
 - `scroll_speed`: Speed at which lines scroll upward, in cells per second (default `0` = static; negative = scroll downward).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
 
+**Preview**
+
+https://github.com/user-attachments/assets/9cb4cacc-9497-4f44-94bc-e9b764c68e5e
+
 ## Screen Noise
 
 **DisplayName:** `Screen Noise`
 
 **Config Key:** `ScreenNoise.Enabled`
 
-Draws animated TV static noise specks over the screen for a glitchy atmosphere. The noise changes every frame. Each speck uses an independent local RNG so global gameplay randomness is unaffected.
+Draws animated TV static noise specks over the screen for a glitchy atmosphere.
 
 **Properties**
 - `alpha`: Maximum opacity of the noise specks (0–1; default `0.5`).
@@ -138,17 +166,25 @@ Draws animated TV static noise specks over the screen for a glitchy atmosphere. 
 - `size`: Physical size of each speck in normalized screen coordinates (0.005–0.1; default `0.01`).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
 
+**Preview**
+
+https://github.com/user-attachments/assets/6852cad0-a432-4389-b98e-e251f6e7e212
+
 ## Sepia
 
 **DisplayName:** `Sepia`
 
 **Config Key:** `Sepia.Enabled`
 
-Applies a warm vintage sepia-tone filter using a per-pixel shader (standard Adobe/Kodak sepia matrix). Fades in and out smoothly. Requires the shader AssetBundle to be built from `BopVisualEffectsShaders/` — see that directory's `README.md` for build instructions. Falls back to a three-pass GL approximation (desaturate → amber tint → sepia multiply) when the bundle is absent.
+Applies a warm vintage sepia-tone filter using a per-pixel shader (standard Adobe/Kodak sepia matrix). Fades in and out smoothly.
 
 **Properties**
 - `intensity`: Strength of the sepia toning (0–1; default `0.8`).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
+
+**Preview**
+
+https://github.com/user-attachments/assets/ff1025b3-1f4b-44c8-982f-6691fe861277
 
 ## Vertical Flip
 
@@ -156,10 +192,14 @@ Applies a warm vintage sepia-tone filter using a per-pixel shader (standard Adob
 
 **Config Key:** `VerticalFlip.Enabled`
 
-Mirrors the screen top-to-bottom for the duration of the event. Composes correctly with Horizontal Flip and zoom effects.
+Mirrors the screen top-to-bottom for the duration of the event. Composes with Horizontal Flip and zoom effects.
 
 **Properties**
 - `length` (event length in editor): How long the flip lasts, in beats. This event is resizable in the timeline.
+
+**Preview**
+
+https://github.com/user-attachments/assets/c155c567-04b0-4fa8-9e83-109681003a1d
 
 ## Vignette
 
@@ -174,17 +214,25 @@ Darkens the screen edges with a smooth radial/elliptical gradient using a 32-seg
 - `size`: How far the darkening extends inward as a fraction of screen half-height (0–0.5; default `0.1`).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
 
+**Preview**
+
+https://github.com/user-attachments/assets/b2031a79-2d93-46ab-b15b-765fe0f1bd79
+
 ## Zoom In
 
 **DisplayName:** `Zoom In`
 
 **Config Key:** `ZoomIn.Enabled`
 
-Eases the camera smoothly into a zoomed-in view, holds at the target level, then eases back out. Great for building tension or drawing attention to a musical phrase. Composes correctly with Zoom Out, Zoom Pulse, and other concurrent Zoom In instances.
+Eases the camera smoothly into a zoomed-in view, holds at the target level, then eases back out. Composes with other zoom events.
 
 **Properties**
 - `intensity`: How far to zoom in, as a fraction of the camera's base size (e.g. `0.2` = 20% closer). Clamped to `[0, 0.99]`.
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
+
+**Preview**
+
+https://github.com/user-attachments/assets/466ba43b-e218-432f-9023-095f3095e138
 
 ## Zoom Out
 
@@ -192,21 +240,12 @@ Eases the camera smoothly into a zoomed-in view, holds at the target level, then
 
 **Config Key:** `ZoomOut.Enabled`
 
-Eases the camera smoothly out to a wider view, holds, then eases back in. Great for revealing the scene or creating a sense of space. Composes correctly with Zoom In, Zoom Pulse, and other concurrent Zoom Out instances.
+Eases the camera smoothly out to a wider view, holds, then eases back in. Composes with other zoom events.
 
 **Properties**
 - `intensity`: How far to zoom out, as a fraction of the camera's base size (e.g. `0.2` = 20% further out).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
 
-## Zoom Pulse
+**Preview**
 
-**DisplayName:** `Zoom Pulse`
-
-**Config Key:** `ZoomPulse.Enabled`
-
-Rapidly zooms the camera in and then eases it back out, creating a punchy "push-in" accent. Works with both orthographic and perspective cameras. Composes correctly with Zoom In, Zoom Out, and other concurrent Zoom Pulse instances.
-
-**Properties**
-- `intensity`: How much to zoom in, expressed as a fraction of the camera's base size (e.g. `0.15` = 15% zoom).
-- `length` (event length in editor): How long the pulse lasts, in beats. This event is resizable in the timeline.
-
+https://github.com/user-attachments/assets/bf89e240-a1f7-48b7-90f9-46fc471c3c6c

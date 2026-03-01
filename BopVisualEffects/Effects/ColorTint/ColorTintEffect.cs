@@ -32,10 +32,7 @@ public sealed class ColorTintEffect : IVisualEffectDefinition
 			resizable = true,
 			properties = new Dictionary<string, object>
 			{
-				["r"] = 1.0f,
-				["g"] = 0.0f,
-				["b"] = 0.0f,
-				["alpha"] = 0.25f
+				["color"] = new MixtapeEventTemplates.ColorField(new Color(1.0f, 0.0f, 0.0f, 0.25f))
 			}
 		};
 	}
@@ -45,10 +42,7 @@ public sealed class ColorTintEffect : IVisualEffectDefinition
 	{
 		var log = ClassLogger.GetForClass<ColorTintEffect>();
 		var durationBeats = Mathf.Max(0.01f, entity.length);
-		var r = entity.GetFloat("r");
-		var g = entity.GetFloat("g");
-		var b = entity.GetFloat("b");
-		var alpha = entity.GetFloat("alpha");
+		var color = entity.GetColor("color");
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
 
@@ -59,17 +53,14 @@ public sealed class ColorTintEffect : IVisualEffectDefinition
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<ColorTintRunner>(runner =>
-				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, r, g, b, alpha));
+				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, color));
 		}
 	}
 
 	private sealed class ColorTintRunner : MonoBehaviour
 	{
 		private bool _initialized;
-		private float _r;
-		private float _g;
-		private float _b;
-		private float _maxAlpha;
+		private Color _color;
 		private float _startBeat;
 		private float _endBeat;
 		private MixtapeLoaderCustom? _loader;
@@ -79,16 +70,13 @@ public sealed class ColorTintEffect : IVisualEffectDefinition
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float r, float g, float b, float alpha)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, Color color)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
 			_startBeat = startBeat;
 			_endBeat = endBeat;
-			_r = Mathf.Clamp01(r);
-			_g = Mathf.Clamp01(g);
-			_b = Mathf.Clamp01(b);
-			_maxAlpha = Mathf.Clamp01(alpha);
+			_color = new Color(Mathf.Clamp01(color.r), Mathf.Clamp01(color.g), Mathf.Clamp01(color.b), Mathf.Clamp01(color.a));
 			InitializeOverlay();
 		}
 
@@ -134,7 +122,7 @@ public sealed class ColorTintEffect : IVisualEffectDefinition
 				envelope = 1f;
 
 			if (_overlay != null)
-				_overlay.SetColor(_r, _g, _b, _maxAlpha * envelope);
+				_overlay.SetColor(new Color(_color.r, _color.g, _color.b, _color.a * envelope));
 		}
 
 		private void OnDisable()
@@ -149,7 +137,7 @@ public sealed class ColorTintEffect : IVisualEffectDefinition
 				return;
 
 			_overlay = camera.gameObject.AddComponent<ColorTintOverlay>();
-			_overlay.SetColor(_r, _g, _b, _maxAlpha);
+			_overlay.SetColor(_color);
 			_initialized = true;
 		}
 
@@ -170,20 +158,14 @@ public sealed class ColorTintEffect : IVisualEffectDefinition
 	private sealed class ColorTintOverlay : MonoBehaviour
 	{
 		private static Material? _material;
-		private float _r;
-		private float _g;
-		private float _b;
-		private float _alpha;
+		private Color _color;
 
 		/// <summary>
 		/// Updates the overlay color and opacity.
 		/// </summary>
-		public void SetColor(float r, float g, float b, float alpha)
+		public void SetColor(Color color)
 		{
-			_r = r;
-			_g = g;
-			_b = b;
-			_alpha = alpha;
+			_color = color;
 		}
 
 		private static Material? GetMaterial()
@@ -207,7 +189,7 @@ public sealed class ColorTintEffect : IVisualEffectDefinition
 		// Unity calls this on the camera's GameObject after it finishes rendering the scene.
 		private void OnPostRender()
 		{
-			if (_alpha <= 0f)
+			if (_color.a <= 0f)
 				return;
 
 			var mat = GetMaterial();
@@ -219,7 +201,7 @@ public sealed class ColorTintEffect : IVisualEffectDefinition
 			GL.PushMatrix();
 			GL.LoadOrtho();
 			GL.Begin(GL.QUADS);
-			GL.Color(new Color(_r, _g, _b, _alpha));
+			GL.Color(_color);
 			GL.Vertex3(0f, 0f, 0f);
 			GL.Vertex3(0f, 1f, 0f);
 			GL.Vertex3(1f, 1f, 0f);
