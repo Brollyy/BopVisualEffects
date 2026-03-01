@@ -132,12 +132,6 @@ jobs:
           mkdir -p dist
           cp BopVisualEffects/bin/Release/net472/BopVisualEffects.dll dist/
 
-          if [ -f BopVisualEffects/bin/Release/net472/BopVisualEffects.pdb ]; then
-            cp BopVisualEffects/bin/Release/net472/BopVisualEffects.pdb dist/
-          fi
-
-          echo "${{ needs.bump-version.outputs.version }}" > dist/VERSION.txt
-
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
