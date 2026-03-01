@@ -5,7 +5,16 @@ on:
     branches: ["master"]
   merge_group:
 
+permissions:
+  contents: read
+
 jobs:
+  setup-game-dlls:
+    uses: ./.github/workflows/setup-game-dlls.yml
+    secrets:
+      STEAM_USERNAME: ${{ secrets.STEAM_USERNAME }}
+      STEAM_PASSWORD: ${{ secrets.STEAM_PASSWORD }}
+
   whitespace-format:
     runs-on: ubuntu-latest
 
@@ -43,6 +52,7 @@ jobs:
         run: dotnet format style BopVisualEffects.sln --no-restore --verify-no-changes --verbosity minimal --exclude BopVisualEffects/obj
 
   analyzers:
+    needs: setup-game-dlls
     runs-on: ubuntu-latest
 
     steps:
@@ -54,8 +64,25 @@ jobs:
         with:
           dotnet-version: 9.0.x
 
+      - name: Download game DLLs artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: game-dlls
+          path: ~/bits-and-bops/Bits & Bops_Data/Managed
+
+      - name: Create BopVisualEffects.user.props
+        run: |
+          mkdir -p BopVisualEffects
+          cat > BopVisualEffects/BopVisualEffects.user.props << EOF
+          <Project>
+            <PropertyGroup>
+              <GameRoot>$HOME/bits-and-bops</GameRoot>
+            </PropertyGroup>
+          </Project>
+          EOF
+
       - name: Restore
-        run: dotnet restore BopVisualEffects.sln -p:SkipGameReferences=true
+        run: dotnet restore BopVisualEffects.sln
 
       - name: Verify analyzer rules
         run: dotnet format analyzers BopVisualEffects.sln --no-restore --verify-no-changes --verbosity minimal --exclude BopVisualEffects/obj
