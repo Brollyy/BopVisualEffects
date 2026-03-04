@@ -228,6 +228,8 @@ Eases the camera smoothly into a zoomed-in view, holds at the target level, then
 
 **Properties**
 - `intensity`: How far to zoom in, as a fraction of the camera's base size (e.g. `0.2` = 20% closer). Clamped to `[0, 0.99]`.
+- `focal_x`: Horizontal position to zoom towards, in normalized screen coordinates (0 = left edge, 0.5 = center, 1 = right edge; default `0.5`).
+- `focal_y`: Vertical position to zoom towards, in normalized screen coordinates (0 = bottom edge, 0.5 = center, 1 = top edge; default `0.5`).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
 
 **Preview**
@@ -244,6 +246,8 @@ Eases the camera smoothly out to a wider view, holds, then eases back in. Compos
 
 **Properties**
 - `intensity`: How far to zoom out, as a fraction of the camera's base size (e.g. `0.2` = 20% further out).
+- `focal_x`: Horizontal position to zoom away from, in normalized screen coordinates (0 = left edge, 0.5 = center, 1 = right edge; default `0.5`).
+- `focal_y`: Vertical position to zoom away from, in normalized screen coordinates (0 = bottom edge, 0.5 = center, 1 = top edge; default `0.5`).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
 
 **Preview**
