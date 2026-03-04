@@ -33,8 +33,8 @@ public sealed class ZoomOutEffect : IVisualEffectDefinition
 			properties = new Dictionary<string, object>
 			{
 				["intensity"] = 0.2f,
-				["focal_x"] = 0.5f,
-				["focal_y"] = 0.5f
+				["focal_x"] = 0.0f,
+				["focal_y"] = 0.0f
 			}
 		};
 	}
@@ -45,8 +45,8 @@ public sealed class ZoomOutEffect : IVisualEffectDefinition
 		var log = ClassLogger.GetForClass<ZoomOutEffect>();
 		var durationBeats = Mathf.Max(0.01f, entity.length);
 		var intensity = entity.GetFloat("intensity");
-		var focalX = entity.GetFloat("focal_x", 0.5f);
-		var focalY = entity.GetFloat("focal_y", 0.5f);
+		var focalX = entity.GetFloat("focal_x", 0.0f);
+		var focalY = entity.GetFloat("focal_y", 0.0f);
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
 
@@ -133,10 +133,8 @@ public sealed class ZoomOutEffect : IVisualEffectDefinition
 			// Zoom out: zoomFactor > 1 means larger camera size = more zoomed out.
 			var zoomFactor = 1f + _intensity * envelope;
 
-			// Convert normalized screen coordinates [0, 1] to NDC [-1, 1]:
-			// (0.5, 0.5) → (0, 0) = screen center (default, backwards-compatible).
-			var focalNDC = new Vector2((_focalX - 0.5f) * 2f, (_focalY - 0.5f) * 2f);
-			CameraZoomService.SetFactor(_camera!, this, zoomFactor, focalNDC);
+			// focal_x/focal_y are in NDC space: (0, 0) = screen center (default), (±1, ±1) = screen corners.
+			CameraZoomService.SetFactor(_camera!, this, zoomFactor, new Vector2(_focalX, _focalY));
 		}
 
 		private void OnDisable()
