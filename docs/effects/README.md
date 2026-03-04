@@ -2,6 +2,25 @@
 
 This page shows the visual effects currently available in BopVisualEffects and what each one does in-game.
 
+## Bubble
+
+**DisplayName:** `Bubble`
+
+**Config Key:** `Bubble.Enabled`
+
+Renders randomly-sized bubbles rising from the bottom of the screen, fading in and out smoothly. Bubble positions are generated once as a fixed tileable pattern and scrolled vertically with wrapping for efficient rendering.
+
+**Properties**
+- `color`: Color of the bubble rings (default `#99D9FF80` — light blue, semi-transparent).
+- `count`: Number of bubbles in the pattern (5–200; default `20`).
+- `speed`: Rise speed in screen heights per second (default `0.15`).
+- `max_size`: Maximum bubble radius as a fraction of screen height (0.01–0.5; default `0.06`).
+- `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
+
+**Preview**
+
+<!-- TODO: record preview .mp4 in-game, upload to GitHub, and replace this placeholder with the link -->
+
 ## Camera Shake
 
 **DisplayName:** `Camera Shake`
