@@ -2,6 +2,13 @@
 
 BepInEx 5.x mod for Bits & Bops that adds additional visual effects for the in-game editor.
 
+## Installation
+
+1. Install [BepInEx 5.x](https://docs.bepinex.dev/articles/user_guide/installation/index.html) for Bits & Bops.
+2. Download `BopVisualEffects.dll` from the [latest release](https://github.com/Brollyy/BopVisualEffects/releases/latest).
+3. Place `BopVisualEffects.dll` in `<GameRoot>/BepInEx/plugins/`.
+4. Launch the game — effects will be available in the in-game editor.
+
 ## Available effects
 
 See [this document](docs/effects/README.md) for the full list of effects this mod enables.
