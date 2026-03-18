@@ -161,12 +161,12 @@ public sealed class SpeedLinesEffect : IVisualEffectDefinition
 	/// <summary>
 	/// Draws animated black speed-line triangles in OnPostRender.
 	/// Each triangle points inward from the screen edge toward the center,
-	/// flickering at an independently randomised phase to create a high-speed rush effect.
+	/// flickering at an independently randomized phase to create a high-speed rush effect.
 	/// Must be attached to a Camera's GameObject.
 	/// </summary>
 	private sealed class SpeedLinesOverlay : MonoBehaviour
 	{
-		// Distance from screen centre to the triangle tip, in screen-height fractions.
+		// Distance from screen center to the triangle tip, in screen-height fractions.
 		private const float InnerRadius = 0.12f;
 
 		// Half-width of the triangle base at the screen boundary, in screen-height fractions.
@@ -225,7 +225,7 @@ public sealed class SpeedLinesEffect : IVisualEffectDefinition
 			return _material;
 		}
 
-		// Returns the screen-boundary intersection from the centre (0.5, 0.5) in
+		// Returns the screen-boundary intersection from the center (0.5, 0.5) in
 		// direction (dx, dy), expressed in GL ortho space (x: 0..1, y: 0..1).
 		private static void ScreenBoundary(float dx, float dy, out float bx, out float by)
 		{
@@ -278,18 +278,18 @@ public sealed class SpeedLinesEffect : IVisualEffectDefinition
 				var dirX = cosA * invAspect;
 				var dirY = sinA;
 
-				// Triangle tip: InnerRadius away from screen centre along the visual direction.
+				// Triangle tip: InnerRadius away from screen center along the visual direction.
 				var tipX = 0.5f + cosA * InnerRadius * invAspect;
 				var tipY = 0.5f + sinA * InnerRadius;
 
-				// Triangle base: centred on the screen boundary at this angle.
+				// Triangle base: centered on the screen boundary at this angle.
 				ScreenBoundary(dirX, dirY, out var bx, out var by);
 
 				// Perpendicular in GL ortho space (visual unit vector → GL representation).
 				var perpX = -sinA * invAspect;
 				var perpY = cosA;
 
-				// Offset the base centre by ±HalfWidth along the perpendicular.
+				// Offset the base center by ±HalfWidth along the perpendicular.
 				var base1X = bx + perpX * HalfWidth;
 				var base1Y = by + perpY * HalfWidth;
 				var base2X = bx - perpX * HalfWidth;
