@@ -264,7 +264,7 @@ public sealed class SpeedLinesEffect : IVisualEffectDefinition
 				// Squaring the sine value produces sharper bright pulses separated by longer dark
 				// periods, reinforcing the high-speed feel. Each triangle uses a unique phase
 				// so they flash at different times rather than all at once.
-				var squaredSin = Mathf.Sin(time * _speed + _phases[i]);
+				var squaredSin = Mathf.Sin(time * _speed * (2f * Mathf.PI) + _phases[i]);
 				squaredSin *= squaredSin;
 				var flickerAlpha = squaredSin * _alpha;
 				if (flickerAlpha <= 0.005f)
