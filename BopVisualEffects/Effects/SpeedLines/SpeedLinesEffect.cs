@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using BopVisualEffects.Core;
 using UnityEngine;
@@ -51,7 +50,7 @@ public sealed class SpeedLinesEffect : IVisualEffectDefinition
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
 
-		loader.scheduler.Schedule(startBeat, (Action?)SpawnAction);
+		loader.scheduler.Schedule(startBeat, (System.Action?)SpawnAction);
 		log.Debug($"Scheduled '{DisplayName}' from beat {startBeat:0.###} to {endBeat:0.###}.");
 		return true;
 
@@ -185,7 +184,7 @@ public sealed class SpeedLinesEffect : IVisualEffectDefinition
 		/// </summary>
 		public void Initialize(int count, float seed)
 		{
-			var rng = new Random(Mathf.FloorToInt(seed * 100f) + count * 7919);
+			var rng = new System.Random(Mathf.FloorToInt(seed * 100f) + count * 7919);
 			_angles = new float[count];
 			_phases = new float[count];
 			for (var i = 0; i < count; i++)
@@ -195,7 +194,7 @@ public sealed class SpeedLinesEffect : IVisualEffectDefinition
 				var baseAngle = 2f * Mathf.PI * i / count;
 				var jitter = (float)(rng.NextDouble() - 0.5) * (2f * Mathf.PI / count) * 0.5f;
 				_angles[i] = baseAngle + jitter;
-				_phases[i] = (float)(rng.NextDouble() * 2.0 * Math.PI);
+				_phases[i] = (float)(rng.NextDouble() * 2.0 * System.Math.PI);
 			}
 		}
 
