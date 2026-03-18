@@ -186,6 +186,24 @@ Applies a warm vintage sepia-tone filter using a per-pixel shader (standard Adob
 
 https://github.com/user-attachments/assets/ff1025b3-1f4b-44c8-982f-6691fe861277
 
+## Speed Lines
+
+**DisplayName:** `Speed Lines`
+
+**Config Key:** `SpeedLines.Enabled`
+
+Draws animated black triangles radiating inward from the screen edges to convey a feeling of high speed. Each triangle independently flickers at its own phase, creating a dynamic rush effect. Fades in and out smoothly.
+
+**Properties**
+- `alpha`: Maximum opacity of the triangles (0–1; default `0.8`).
+- `count`: Number of speed-line triangles (4–64; default `20`).
+- `speed`: Flicker rate of each triangle in cycles per second (default `3.5`). Higher values produce more frantic flickering; lower values give slower, more rhythmic pulses.
+- `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
+
+**Preview**
+
+<!-- TODO: record preview .mp4 in-game, upload to GitHub, and replace this placeholder with the link -->
+
 ## Vertical Flip
 
 **DisplayName:** `Vertical Flip`
