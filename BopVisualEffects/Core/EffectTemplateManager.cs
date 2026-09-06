@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 
 namespace BopVisualEffects.Core;
 
@@ -43,21 +42,7 @@ public static class EffectTemplateManager
 			}
 		}
 
-		// Bits & Bops 1.13 introduced cached flattened templates and category names
-		// for the new editor layout. Refresh them after changing the legacy entity map;
-		// otherwise the plugin templates exist but are not offered by the UI.
-		InvokeTemplateCacheRefresh("InitAllTemplates");
-		InvokeTemplateCacheRefresh("InitCategories");
-
-		log.Info($"Refreshed effect templates. Count={templates.Count}. Categories={string.Join(",", entities.Keys)}");
-	}
-
-	private static void InvokeTemplateCacheRefresh(string methodName)
-	{
-		var method = typeof(MixtapeEventTemplates).GetMethod(
-			methodName,
-			BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
-		method?.Invoke(null, null);
+		log.Info($"Refreshed effect templates. Count={templates.Count}.");
 	}
 
 	private static int GetPreferredInsertIndex(List<KeyValuePair<string, List<MixtapeEventTemplate>>> ordered)

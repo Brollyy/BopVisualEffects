@@ -1,13 +1,4 @@
 <Project>
-  <!--
-    Supported game version. The CI DLL cache is versioned with this value so a
-    game update cannot accidentally reuse an older Assembly-CSharp reference.
-  -->
-  <PropertyGroup>
-    <BitsAndBopsVersion>1.13.0</BitsAndBopsVersion>
-    <BitsAndBopsBuildId>24990737</BitsAndBopsBuildId>
-  </PropertyGroup>
-
   <ItemGroup>
     <GameLibrary Include="Assembly-CSharp" />
   </ItemGroup>

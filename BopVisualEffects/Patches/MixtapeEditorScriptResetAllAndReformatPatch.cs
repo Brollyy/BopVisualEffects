@@ -1,6 +1,7 @@
 using BopVisualEffects.Core;
 using HarmonyLib;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -10,6 +11,9 @@ using UnityEngine.UI;
 
 namespace BopVisualEffects.Patches;
 
+/// <summary>
+/// Keeps plugin-owned templates and the custom category visible after editor resets.
+/// </summary>
 [HarmonyPatch(typeof(MixtapeEditorScript), "ResetAllAndReformat")]
 public static class MixtapeEditorScriptResetAllAndReformatPatch
 {
@@ -18,6 +22,9 @@ public static class MixtapeEditorScriptResetAllAndReformatPatch
 	private static readonly Dictionary<int, float> BaseContainerX = new();
 	private static readonly Dictionary<int, float> BaseButtonY = new();
 
+	/// <summary>
+	/// Rebuilds plugin-owned templates and restores the custom category button after a reset.
+	/// </summary>
 	public static void Postfix(MixtapeEditorScript __instance)
 	{
 		var logger = ClassLogger.GetForClass(typeof(MixtapeEditorScriptResetAllAndReformatPatch));
@@ -37,14 +44,19 @@ public static class MixtapeEditorScriptResetAllAndReformatPatch
 
 		var categoryKeys = GetGenericCategoryKeys(editor);
 		var buttons = GetDirectButtons(root.transform);
-		if (buttons.Count < 3)
+		if (buttons.Count == 0)
 			return;
 
 		var onSelectCategory = AccessTools.Method(typeof(MixtapeEditorScript), "OnSelectCategory");
 		if (onSelectCategory is null)
 			return;
 
-		var source = buttons[2];
+		var source = FindCategoryButton(buttons, "effects");
+		if (source is null)
+		{
+			logger.Warning("Could not find the built-in Visual Effects category button.");
+			return;
+		}
 		var builtInCategories = new HashSet<string>(StringComparer.Ordinal)
 		{
 			"_",
@@ -64,8 +76,7 @@ public static class MixtapeEditorScriptResetAllAndReformatPatch
 			if (root.transform.Find(marker) is not null)
 				continue;
 
-			// If another mod already supplied a button for this category, the
-			// available row capacity accounts for it. Do not duplicate it.
+			// If another mod already supplied a button for this category, do not duplicate it.
 			if (buttons.Count >= categoryKeys.Count)
 				break;
 
@@ -238,6 +249,35 @@ public static class MixtapeEditorScriptResetAllAndReformatPatch
 		return buttons;
 	}
 
+	private static Button? FindCategoryButton(IEnumerable<Button> buttons, string category)
+	{
+		foreach (var button in buttons)
+		{
+			var persistentCalls = AccessTools.Field(typeof(UnityEventBase), "m_PersistentCalls")?.GetValue(button.onClick);
+			if (persistentCalls is null)
+				continue;
+
+			var calls = AccessTools.Field(persistentCalls.GetType(), "m_Calls")?.GetValue(persistentCalls) as IEnumerable;
+			if (calls is null)
+				continue;
+
+			foreach (var call in calls)
+			{
+				if (call is null)
+					continue;
+
+				var arguments = AccessTools.Field(call.GetType(), "m_Arguments")?.GetValue(call);
+				var value = arguments is null
+					? null
+					: AccessTools.Field(arguments.GetType(), "m_StringArgument")?.GetValue(arguments) as string;
+				if (string.Equals(value, category, StringComparison.Ordinal))
+					return button;
+			}
+		}
+
+		return null;
+	}
+
 	private static void ArrangeMetaButtons(GameObject root, List<Button> buttons, ClassLogger logger)
 	{
 		if (buttons.Count == 0)
@@ -260,12 +300,6 @@ public static class MixtapeEditorScriptResetAllAndReformatPatch
 		if (scale <= 0f)
 			scale = Mathf.Clamp(availableWidth / (baseWidth * maxColumns), 0.5f, 1f);
 
-		// The serialized row uses a layout component that only supports one
-		// line. Disable that component and place the buttons directly so extra
-		// categories can form centered rows without forcing a layout rebuild.
-		foreach (var layout in root.GetComponents<LayoutGroup>())
-			layout.enabled = false;
-
 		var rowCount = (buttons.Count + maxColumns - 1) / maxColumns;
 		var itemsPerRow = buttons.Count / rowCount;
 		var rowsWithExtraItem = buttons.Count % rowCount;
@@ -276,11 +310,14 @@ public static class MixtapeEditorScriptResetAllAndReformatPatch
 		{
 			// Preserve the game's original Y positions and vertical margin, but
 			// center the row horizontally after the layout group has positioned it.
-			foreach (var layout in root.GetComponents<LayoutGroup>())
-				layout.enabled = true;
 			CenterSingleRowHorizontally(root, buttons, logger);
 			return;
 		}
+
+		// For wrapped rows, disable the single-line layout group and place the
+		// buttons directly so additional categories can form centered rows.
+		foreach (var layout in root.GetComponents<LayoutGroup>())
+			layout.enabled = false;
 		var rowStep = baseHeight * scale + rowSpacing;
 		// Use the container's local center as the horizontal origin. The cloned
 		// buttons inherit anchors from the serialized layout, so anchoredPosition
@@ -324,6 +361,8 @@ public static class MixtapeEditorScriptResetAllAndReformatPatch
 		if (rootRect is null)
 			return;
 
+		foreach (var layout in root.GetComponents<LayoutGroup>())
+			layout.enabled = true;
 		LayoutRebuilder.ForceRebuildLayoutImmediate(rootRect);
 		var minX = float.PositiveInfinity;
 		var maxX = float.NegativeInfinity;

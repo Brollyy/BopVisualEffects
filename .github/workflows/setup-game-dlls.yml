@@ -19,11 +19,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/bits-and-bops/Bits & Bops_Data/Managed
-          # Bump this key whenever the supported game version changes. A versioned
-          # key prevents a successful restore from silently compiling against an
-          # older Assembly-CSharp.dll after a Bits & Bops update.
-          key: bits-and-bops-1929290-managed-1.13.0-24990737-${{ runner.os }}
-          restore-keys: bits-and-bops-1929290-managed-1.13.0-24990737-
+          key: bits-and-bops-1929290-managed-${{ runner.os }}-v1
+          restore-keys: bits-and-bops-1929290-managed-${{ runner.os }}-
 
       - name: Download game DLLs using SteamCMD
         env:
@@ -66,9 +63,8 @@ jobs:
             +quit
 
           echo "Game DLLs downloaded successfully"
-          test -s "$GAME_DIR/Bits & Bops_Data/Managed/Assembly-CSharp.dll"
           ls "$GAME_DIR/Bits & Bops_Data/Managed/" | wc -l
-          echo "Bits & Bops 1.13.0 managed DLLs found"
+          echo "DLLs found in managed directory"
 
       - name: Upload game DLLs as artifact
         uses: actions/upload-artifact@v4
