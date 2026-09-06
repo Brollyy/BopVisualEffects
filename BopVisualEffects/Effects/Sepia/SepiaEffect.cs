@@ -34,7 +34,8 @@ public sealed class SepiaEffect : IVisualEffectDefinition
 			resizable = true,
 			properties = new Dictionary<string, object>
 			{
-				["intensity"] = 0.8f
+				["intensity"] = 0.8f,
+				["persist_between_minigames"] = false
 			}
 		};
 	}
@@ -45,6 +46,7 @@ public sealed class SepiaEffect : IVisualEffectDefinition
 		var log = ClassLogger.GetForClass<SepiaEffect>();
 		var durationBeats = Mathf.Max(0.01f, entity.length);
 		var intensity = entity.GetFloat("intensity");
+		var persist = entity.GetBool("persist_between_minigames", false);
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
 
@@ -55,7 +57,7 @@ public sealed class SepiaEffect : IVisualEffectDefinition
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<SepiaRunner>(runner =>
-				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, intensity));
+				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, intensity, persist));
 		}
 	}
 
@@ -69,17 +71,19 @@ public sealed class SepiaEffect : IVisualEffectDefinition
 		private JukeboxScript? _jukebox;
 		private Camera? _camera;
 		private SepiaRequest? _request;
+		private bool _persistBetweenMinigames;
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float intensity)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float intensity, bool persistBetweenMinigames)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
 			_startBeat = startBeat;
 			_endBeat = endBeat;
 			_maxIntensity = Mathf.Clamp01(intensity);
+			_persistBetweenMinigames = persistBetweenMinigames;
 			InitializeRequest();
 		}
 
@@ -106,6 +110,9 @@ public sealed class SepiaEffect : IVisualEffectDefinition
 				if (!_initialized)
 					return;
 			}
+
+			if (_persistBetweenMinigames)
+				RebindRequestIfNeeded();
 
 			var currentBeat = _jukebox.CurrentBeat;
 			if (currentBeat >= _endBeat)
@@ -145,6 +152,20 @@ public sealed class SepiaEffect : IVisualEffectDefinition
 			_initialized = true;
 		}
 
+		private void RebindRequestIfNeeded()
+		{
+			Camera? camera = EffectRuntimeController.ResolveEffectCamera(_loader);
+			if (camera is null || _camera == camera)
+				return;
+
+			if (_camera is not null && _request is not null)
+				SepiaService.RemoveRequest(_camera, _request);
+
+			_camera = camera;
+			_request = SepiaService.AddRequest(camera);
+			_request.Intensity = _maxIntensity;
+		}
+
 		private void RemoveRequest()
 		{
 			if (_camera != null && _request != null)
@@ -155,4 +176,3 @@ public sealed class SepiaEffect : IVisualEffectDefinition
 		}
 	}
 }
-

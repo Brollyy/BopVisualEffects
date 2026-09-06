@@ -33,7 +33,8 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 			resizable = true,
 			properties = new Dictionary<string, object>
 			{
-				["pixel_size"] = 4.0f
+				["pixel_size"] = 4.0f,
+				["persist_between_minigames"] = false
 			}
 		};
 	}
@@ -44,6 +45,7 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 		var log = ClassLogger.GetForClass<PixelGridEffect>();
 		var durationBeats = Mathf.Max(0.01f, entity.length);
 		var pixelSize = entity.GetFloat("pixel_size");
+		var persist = entity.GetBool("persist_between_minigames", false);
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
 
@@ -54,7 +56,7 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<PixelGridRunner>(runner =>
-				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, pixelSize));
+				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, pixelSize, persist));
 		}
 	}
 
@@ -67,17 +69,20 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 		private MixtapeLoaderCustom? _loader;
 		private JukeboxScript? _jukebox;
 		private PixelGridOverlay? _overlay;
+		private Camera? _camera;
+		private bool _persistBetweenMinigames;
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float pixelSize)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float pixelSize, bool persistBetweenMinigames)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
 			_startBeat = startBeat;
 			_endBeat = endBeat;
 			_pixelSize = Mathf.Clamp(Mathf.RoundToInt(pixelSize), 2, 64);
+			_persistBetweenMinigames = persistBetweenMinigames;
 			InitializeOverlay();
 		}
 
@@ -104,6 +109,9 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 				if (!_initialized)
 					return;
 			}
+
+			if (_persistBetweenMinigames)
+				RebindOverlayIfNeeded();
 
 			var currentBeat = _jukebox.CurrentBeat;
 			if (currentBeat >= _endBeat)
@@ -140,6 +148,7 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 				return;
 
 			_overlay = camera.gameObject.AddComponent<PixelGridOverlay>();
+			_camera = camera;
 			_overlay.SetBlockSize(_pixelSize);
 			_initialized = true;
 		}
@@ -152,6 +161,18 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 			}
 
 			_overlay = null;
+			_camera = null;
+		}
+
+		private void RebindOverlayIfNeeded()
+		{
+			Camera? camera = EffectRuntimeController.ResolveEffectCamera(_loader);
+			if (camera is null || _camera == camera)
+				return;
+
+			RemoveOverlay();
+			_overlay = camera.gameObject.AddComponent<PixelGridOverlay>();
+			_camera = camera;
 		}
 	}
 

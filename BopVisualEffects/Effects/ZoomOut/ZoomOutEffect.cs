@@ -32,7 +32,8 @@ public sealed class ZoomOutEffect : IVisualEffectDefinition
 			resizable = true,
 			properties = new Dictionary<string, object>
 			{
-				["intensity"] = 0.2f
+				["intensity"] = 0.2f,
+				["persist_between_minigames"] = false
 			}
 		};
 	}
@@ -43,6 +44,7 @@ public sealed class ZoomOutEffect : IVisualEffectDefinition
 		var log = ClassLogger.GetForClass<ZoomOutEffect>();
 		var durationBeats = Mathf.Max(0.01f, entity.length);
 		var intensity = entity.GetFloat("intensity");
+		var persist = entity.GetBool("persist_between_minigames", false);
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
 
@@ -53,7 +55,7 @@ public sealed class ZoomOutEffect : IVisualEffectDefinition
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<ZoomOutRunner>(runner =>
-				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, intensity));
+				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, intensity, persist));
 		}
 	}
 
@@ -66,17 +68,19 @@ public sealed class ZoomOutEffect : IVisualEffectDefinition
 		private MixtapeLoaderCustom? _loader;
 		private JukeboxScript? _jukebox;
 		private Camera? _camera;
+		private bool _persistBetweenMinigames;
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float intensity)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float intensity, bool persistBetweenMinigames)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
 			_startBeat = startBeat;
 			_endBeat = endBeat;
 			_intensity = Mathf.Max(0f, intensity);
+			_persistBetweenMinigames = persistBetweenMinigames;
 			InitializeTargetCamera();
 		}
 
@@ -104,6 +108,9 @@ public sealed class ZoomOutEffect : IVisualEffectDefinition
 				if (!_initialized)
 					return;
 			}
+
+			if (_persistBetweenMinigames)
+				RebindCameraIfNeeded();
 
 			var currentBeat = _jukebox.CurrentBeat;
 			if (currentBeat >= _endBeat)
@@ -141,6 +148,18 @@ public sealed class ZoomOutEffect : IVisualEffectDefinition
 
 			_camera = camera;
 			_initialized = true;
+		}
+
+		private void RebindCameraIfNeeded()
+		{
+			Camera? camera = EffectRuntimeController.ResolveEffectCamera(_loader);
+			if (camera is null || _camera == camera)
+				return;
+
+			if (_camera is not null)
+				CameraZoomService.RemoveFactor(_camera, this);
+
+			_camera = camera;
 		}
 	}
 }

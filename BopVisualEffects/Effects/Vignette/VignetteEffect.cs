@@ -33,7 +33,8 @@ public sealed class VignetteEffect : IVisualEffectDefinition
 			properties = new Dictionary<string, object>
 			{
 				["alpha"] = 0.7f,
-				["size"] = 0.1f
+				["size"] = 0.1f,
+				["persist_between_minigames"] = false
 			}
 		};
 	}
@@ -45,6 +46,7 @@ public sealed class VignetteEffect : IVisualEffectDefinition
 		var durationBeats = Mathf.Max(0.01f, entity.length);
 		var alpha = entity.GetFloat("alpha");
 		var size = entity.GetFloat("size");
+		var persist = entity.GetBool("persist_between_minigames", false);
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
 
@@ -55,7 +57,7 @@ public sealed class VignetteEffect : IVisualEffectDefinition
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<VignetteRunner>(runner =>
-				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, alpha, size));
+				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, alpha, size, persist));
 		}
 	}
 
@@ -69,11 +71,13 @@ public sealed class VignetteEffect : IVisualEffectDefinition
 		private MixtapeLoaderCustom? _loader;
 		private JukeboxScript? _jukebox;
 		private VignetteOverlay? _overlay;
+		private Camera? _camera;
+		private bool _persistBetweenMinigames;
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float alpha, float size)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float alpha, float size, bool persistBetweenMinigames)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
@@ -81,6 +85,7 @@ public sealed class VignetteEffect : IVisualEffectDefinition
 			_endBeat = endBeat;
 			_alpha = Mathf.Clamp01(alpha);
 			_size = Mathf.Clamp(size, 0f, 0.5f);
+			_persistBetweenMinigames = persistBetweenMinigames;
 			InitializeOverlay();
 		}
 
@@ -107,6 +112,9 @@ public sealed class VignetteEffect : IVisualEffectDefinition
 				if (!_initialized)
 					return;
 			}
+
+			if (_persistBetweenMinigames)
+				RebindOverlayIfNeeded();
 
 			var currentBeat = _jukebox.CurrentBeat;
 			if (currentBeat >= _endBeat)
@@ -141,6 +149,7 @@ public sealed class VignetteEffect : IVisualEffectDefinition
 				return;
 
 			_overlay = camera.gameObject.AddComponent<VignetteOverlay>();
+			_camera = camera;
 			_overlay.SetParams(_alpha, _size);
 			_initialized = true;
 		}
@@ -153,6 +162,19 @@ public sealed class VignetteEffect : IVisualEffectDefinition
 			}
 
 			_overlay = null;
+			_camera = null;
+		}
+
+		private void RebindOverlayIfNeeded()
+		{
+			Camera? camera = EffectRuntimeController.ResolveEffectCamera(_loader);
+			if (camera is null || _camera == camera)
+				return;
+
+			RemoveOverlay();
+			_overlay = camera.gameObject.AddComponent<VignetteOverlay>();
+			_camera = camera;
+			_overlay.SetParams(_alpha, _size);
 		}
 	}
 

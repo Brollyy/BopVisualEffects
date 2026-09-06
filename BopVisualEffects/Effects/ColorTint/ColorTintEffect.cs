@@ -32,7 +32,8 @@ public sealed class ColorTintEffect : IVisualEffectDefinition
 			resizable = true,
 			properties = new Dictionary<string, object>
 			{
-				["color"] = new MixtapeEventTemplates.ColorField(new Color(1.0f, 0.0f, 0.0f, 0.25f))
+				["color"] = new MixtapeEventTemplates.ColorField(new Color(1.0f, 0.0f, 0.0f, 0.25f)),
+				["persist_between_minigames"] = false
 			}
 		};
 	}
@@ -43,6 +44,7 @@ public sealed class ColorTintEffect : IVisualEffectDefinition
 		var log = ClassLogger.GetForClass<ColorTintEffect>();
 		var durationBeats = Mathf.Max(0.01f, entity.length);
 		var color = entity.GetColor("color");
+		var persist = entity.GetBool("persist_between_minigames", false);
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
 
@@ -53,7 +55,7 @@ public sealed class ColorTintEffect : IVisualEffectDefinition
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<ColorTintRunner>(runner =>
-				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, color));
+				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, color, persist));
 		}
 	}
 
@@ -66,17 +68,20 @@ public sealed class ColorTintEffect : IVisualEffectDefinition
 		private MixtapeLoaderCustom? _loader;
 		private JukeboxScript? _jukebox;
 		private ColorTintOverlay? _overlay;
+		private Camera? _camera;
+		private bool _persistBetweenMinigames;
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, Color color)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, Color color, bool persistBetweenMinigames)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
 			_startBeat = startBeat;
 			_endBeat = endBeat;
 			_color = new Color(Mathf.Clamp01(color.r), Mathf.Clamp01(color.g), Mathf.Clamp01(color.b), Mathf.Clamp01(color.a));
+			_persistBetweenMinigames = persistBetweenMinigames;
 			InitializeOverlay();
 		}
 
@@ -103,6 +108,9 @@ public sealed class ColorTintEffect : IVisualEffectDefinition
 				if (!_initialized)
 					return;
 			}
+
+			if (_persistBetweenMinigames)
+				RebindOverlayIfNeeded();
 
 			var currentBeat = _jukebox.CurrentBeat;
 			if (currentBeat >= _endBeat)
@@ -137,6 +145,7 @@ public sealed class ColorTintEffect : IVisualEffectDefinition
 				return;
 
 			_overlay = camera.gameObject.AddComponent<ColorTintOverlay>();
+			_camera = camera;
 			_overlay.SetColor(_color);
 			_initialized = true;
 		}
@@ -149,6 +158,19 @@ public sealed class ColorTintEffect : IVisualEffectDefinition
 			}
 
 			_overlay = null;
+			_camera = null;
+		}
+
+		private void RebindOverlayIfNeeded()
+		{
+			Camera? camera = EffectRuntimeController.ResolveEffectCamera(_loader);
+			if (camera is null || _camera == camera)
+				return;
+
+			RemoveOverlay();
+			_overlay = camera.gameObject.AddComponent<ColorTintOverlay>();
+			_camera = camera;
+			_overlay.SetColor(_color);
 		}
 	}
 

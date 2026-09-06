@@ -31,7 +31,8 @@ public sealed class CameraTiltEffect : IVisualEffectDefinition
 			resizable = true,
 			properties = new Dictionary<string, object>
 			{
-				["angle"] = 5.0f
+				["angle"] = 5.0f,
+				["persist_between_minigames"] = false
 			}
 		};
 	}
@@ -42,6 +43,7 @@ public sealed class CameraTiltEffect : IVisualEffectDefinition
 		var log = ClassLogger.GetForClass<CameraTiltEffect>();
 		var durationBeats = Mathf.Max(0.01f, entity.length);
 		var angle = entity.GetFloat("angle");
+		var persist = entity.GetBool("persist_between_minigames", false);
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
 
@@ -52,7 +54,7 @@ public sealed class CameraTiltEffect : IVisualEffectDefinition
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<CameraTiltRunner>(runner =>
-				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, angle));
+				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, angle, persist));
 		}
 	}
 
@@ -66,17 +68,19 @@ public sealed class CameraTiltEffect : IVisualEffectDefinition
 		private JukeboxScript? _jukebox;
 		private Transform? _targetTransform;
 		private Quaternion _initialLocalRotation;
+		private bool _persistBetweenMinigames;
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float angle)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float angle, bool persistBetweenMinigames)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
 			_startBeat = startBeat;
 			_endBeat = endBeat;
 			_angle = angle;
+			_persistBetweenMinigames = persistBetweenMinigames;
 			InitializeTargetCamera();
 		}
 
@@ -103,6 +107,9 @@ public sealed class CameraTiltEffect : IVisualEffectDefinition
 				if (!_initialized)
 					return;
 			}
+
+			if (_persistBetweenMinigames)
+				RebindCameraIfNeeded();
 
 			var currentBeat = _jukebox.CurrentBeat;
 			if (currentBeat >= _endBeat)
@@ -132,6 +139,17 @@ public sealed class CameraTiltEffect : IVisualEffectDefinition
 			_targetTransform = camera.transform;
 			_initialLocalRotation = _targetTransform.localRotation;
 			_initialized = true;
+		}
+
+		private void RebindCameraIfNeeded()
+		{
+			Camera? camera = EffectRuntimeController.ResolveEffectCamera(_loader);
+			if (camera is null || _targetTransform == camera.transform)
+				return;
+
+			ResetCameraTransform();
+			_targetTransform = camera.transform;
+			_initialLocalRotation = _targetTransform.localRotation;
 		}
 
 		private void ResetCameraTransform()

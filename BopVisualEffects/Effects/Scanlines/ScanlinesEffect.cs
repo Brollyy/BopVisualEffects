@@ -34,7 +34,8 @@ public sealed class ScanlinesEffect : IVisualEffectDefinition
 			{
 				["alpha"] = 0.35f,
 				["count"] = 60.0f,
-				["scroll_speed"] = 0.0f
+				["scroll_speed"] = 0.0f,
+				["persist_between_minigames"] = false
 			}
 		};
 	}
@@ -47,6 +48,7 @@ public sealed class ScanlinesEffect : IVisualEffectDefinition
 		var alpha = entity.GetFloat("alpha");
 		var count = entity.GetFloat("count");
 		var scrollSpeed = entity.GetFloat("scroll_speed");
+		var persist = entity.GetBool("persist_between_minigames", false);
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
 
@@ -57,7 +59,7 @@ public sealed class ScanlinesEffect : IVisualEffectDefinition
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<ScanlinesRunner>(runner =>
-				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, alpha, count, scrollSpeed));
+				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, alpha, count, scrollSpeed, persist));
 		}
 	}
 
@@ -72,11 +74,13 @@ public sealed class ScanlinesEffect : IVisualEffectDefinition
 		private MixtapeLoaderCustom? _loader;
 		private JukeboxScript? _jukebox;
 		private ScanlinesOverlay? _overlay;
+		private Camera? _camera;
+		private bool _persistBetweenMinigames;
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float alpha, float count, float scrollSpeed)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float alpha, float count, float scrollSpeed, bool persistBetweenMinigames)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
@@ -85,6 +89,7 @@ public sealed class ScanlinesEffect : IVisualEffectDefinition
 			_alpha = Mathf.Clamp01(alpha);
 			_count = Mathf.Clamp(Mathf.RoundToInt(count), 4, 2000);
 			_scrollSpeed = scrollSpeed;
+			_persistBetweenMinigames = persistBetweenMinigames;
 			InitializeOverlay();
 		}
 
@@ -111,6 +116,9 @@ public sealed class ScanlinesEffect : IVisualEffectDefinition
 				if (!_initialized)
 					return;
 			}
+
+			if (_persistBetweenMinigames)
+				RebindOverlayIfNeeded();
 
 			var currentBeat = _jukebox.CurrentBeat;
 			if (currentBeat >= _endBeat)
@@ -145,6 +153,7 @@ public sealed class ScanlinesEffect : IVisualEffectDefinition
 				return;
 
 			_overlay = camera.gameObject.AddComponent<ScanlinesOverlay>();
+			_camera = camera;
 			_overlay.SetParams(_alpha, _count, _scrollSpeed);
 			_initialized = true;
 		}
@@ -157,6 +166,19 @@ public sealed class ScanlinesEffect : IVisualEffectDefinition
 			}
 
 			_overlay = null;
+			_camera = null;
+		}
+
+		private void RebindOverlayIfNeeded()
+		{
+			Camera? camera = EffectRuntimeController.ResolveEffectCamera(_loader);
+			if (camera is null || _camera == camera)
+				return;
+
+			RemoveOverlay();
+			_overlay = camera.gameObject.AddComponent<ScanlinesOverlay>();
+			_camera = camera;
+			_overlay.SetParams(_alpha, _count, _scrollSpeed);
 		}
 	}
 

@@ -34,7 +34,8 @@ public sealed class ScreenNoiseEffect : IVisualEffectDefinition
 			{
 				["alpha"] = 0.5f,
 				["count"] = 400.0f,
-				["size"] = 0.01f
+				["size"] = 0.01f,
+				["persist_between_minigames"] = false
 			}
 		};
 	}
@@ -47,6 +48,7 @@ public sealed class ScreenNoiseEffect : IVisualEffectDefinition
 		var alpha = entity.GetFloat("alpha");
 		var count = entity.GetFloat("count");
 		var size = entity.GetFloat("size");
+		var persist = entity.GetBool("persist_between_minigames", false);
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
 
@@ -57,7 +59,7 @@ public sealed class ScreenNoiseEffect : IVisualEffectDefinition
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<ScreenNoiseRunner>(runner =>
-				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, alpha, count, size));
+				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, alpha, count, size, persist));
 		}
 	}
 
@@ -72,11 +74,13 @@ public sealed class ScreenNoiseEffect : IVisualEffectDefinition
 		private MixtapeLoaderCustom? _loader;
 		private JukeboxScript? _jukebox;
 		private ScreenNoiseOverlay? _overlay;
+		private Camera? _camera;
+		private bool _persistBetweenMinigames;
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float alpha, float count, float size)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float alpha, float count, float size, bool persistBetweenMinigames)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
@@ -85,6 +89,7 @@ public sealed class ScreenNoiseEffect : IVisualEffectDefinition
 			_alpha = Mathf.Clamp01(alpha);
 			_count = Mathf.Clamp(Mathf.RoundToInt(count), 10, 2000);
 			_size = Mathf.Clamp(size, 0.005f, 0.1f);
+			_persistBetweenMinigames = persistBetweenMinigames;
 			InitializeOverlay();
 		}
 
@@ -111,6 +116,9 @@ public sealed class ScreenNoiseEffect : IVisualEffectDefinition
 				if (!_initialized)
 					return;
 			}
+
+			if (_persistBetweenMinigames)
+				RebindOverlayIfNeeded();
 
 			var currentBeat = _jukebox.CurrentBeat;
 			if (currentBeat >= _endBeat)
@@ -145,6 +153,7 @@ public sealed class ScreenNoiseEffect : IVisualEffectDefinition
 				return;
 
 			_overlay = camera.gameObject.AddComponent<ScreenNoiseOverlay>();
+			_camera = camera;
 			_overlay.SetParams(_alpha, _count, _size);
 			_initialized = true;
 		}
@@ -157,6 +166,19 @@ public sealed class ScreenNoiseEffect : IVisualEffectDefinition
 			}
 
 			_overlay = null;
+			_camera = null;
+		}
+
+		private void RebindOverlayIfNeeded()
+		{
+			Camera? camera = EffectRuntimeController.ResolveEffectCamera(_loader);
+			if (camera is null || _camera == camera)
+				return;
+
+			RemoveOverlay();
+			_overlay = camera.gameObject.AddComponent<ScreenNoiseOverlay>();
+			_camera = camera;
+			_overlay.SetParams(_alpha, _count, _size);
 		}
 	}
 

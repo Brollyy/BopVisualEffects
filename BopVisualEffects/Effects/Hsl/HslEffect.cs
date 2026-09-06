@@ -37,7 +37,8 @@ public sealed class HslEffect : IVisualEffectDefinition
 				["hue_shift"] = 0.0f,
 				["saturation"] = 1.0f,
 				["lightness"] = 0.0f,
-				["intensity"] = 1.0f
+				["intensity"] = 1.0f,
+				["persist_between_minigames"] = false
 			}
 		};
 	}
@@ -51,6 +52,7 @@ public sealed class HslEffect : IVisualEffectDefinition
 		var saturation = entity.GetFloat("saturation");
 		var lightness = entity.GetFloat("lightness");
 		var intensity = entity.GetFloat("intensity");
+		var persist = entity.GetBool("persist_between_minigames", false);
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
 
@@ -61,7 +63,7 @@ public sealed class HslEffect : IVisualEffectDefinition
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<HslRunner>(runner =>
-				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, hueShift, saturation, lightness, intensity));
+				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, hueShift, saturation, lightness, intensity, persist));
 		}
 	}
 
@@ -78,12 +80,13 @@ public sealed class HslEffect : IVisualEffectDefinition
 		private JukeboxScript? _jukebox;
 		private Camera? _camera;
 		private HslRequest? _request;
+		private bool _persistBetweenMinigames;
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
 		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat,
-			float hueShift, float saturation, float lightness, float intensity)
+			float hueShift, float saturation, float lightness, float intensity, bool persistBetweenMinigames)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
@@ -93,6 +96,7 @@ public sealed class HslEffect : IVisualEffectDefinition
 			_saturation = Mathf.Max(0f, saturation);
 			_lightness = Mathf.Clamp(lightness, -0.5f, 0.5f);
 			_maxIntensity = Mathf.Clamp01(intensity);
+			_persistBetweenMinigames = persistBetweenMinigames;
 			InitializeRequest();
 		}
 
@@ -119,6 +123,9 @@ public sealed class HslEffect : IVisualEffectDefinition
 				if (!_initialized)
 					return;
 			}
+
+			if (_persistBetweenMinigames)
+				RebindRequestIfNeeded();
 
 			var currentBeat = _jukebox.CurrentBeat;
 			if (currentBeat >= _endBeat)
@@ -166,6 +173,22 @@ public sealed class HslEffect : IVisualEffectDefinition
 			_initialized = true;
 		}
 
+		private void RebindRequestIfNeeded()
+		{
+			Camera? camera = EffectRuntimeController.ResolveEffectCamera(_loader);
+			if (camera is null || _camera == camera)
+				return;
+
+			if (_camera is not null && _request is not null)
+				HslService.RemoveRequest(_camera, _request);
+
+			_camera = camera;
+			_request = HslService.AddRequest(camera);
+			_request.HueShift = _hueShift;
+			_request.Saturation = _saturation;
+			_request.Lightness = _lightness;
+		}
+
 		private void RemoveRequest()
 		{
 			if (_camera != null && _request != null)
@@ -178,4 +201,3 @@ public sealed class HslEffect : IVisualEffectDefinition
 		}
 	}
 }
-

@@ -30,7 +30,10 @@ public sealed class HorizontalFlipEffect : IVisualEffectDefinition
 			dataModel = $"{pluginGuid}/{Id}",
 			length = 2.0f,
 			resizable = true,
-			properties = new Dictionary<string, object>()
+			properties = new Dictionary<string, object>
+			{
+				["persist_between_minigames"] = false
+			}
 		};
 	}
 
@@ -41,6 +44,7 @@ public sealed class HorizontalFlipEffect : IVisualEffectDefinition
 		var durationBeats = Mathf.Max(0.01f, entity.length);
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
+		var persist = entity.GetBool("persist_between_minigames", false);
 
 		loader.scheduler.Schedule(startBeat, (System.Action?)SpawnAction);
 		log.Debug($"Scheduled '{DisplayName}' from beat {startBeat:0.###} to {endBeat:0.###}.");
@@ -49,7 +53,7 @@ public sealed class HorizontalFlipEffect : IVisualEffectDefinition
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<HorizontalFlipRunner>(runner =>
-				runner.Initialize(loader, loader.jukebox, endBeat));
+				runner.Initialize(loader, loader.jukebox, endBeat, persist));
 		}
 	}
 
@@ -60,15 +64,17 @@ public sealed class HorizontalFlipEffect : IVisualEffectDefinition
 		private MixtapeLoaderCustom? _loader;
 		private JukeboxScript? _jukebox;
 		private Camera? _camera;
+		private bool _persistBetweenMinigames;
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float endBeat)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float endBeat, bool persistBetweenMinigames)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
 			_endBeat = endBeat;
+			_persistBetweenMinigames = persistBetweenMinigames;
 			InitializeFlip();
 		}
 
@@ -95,6 +101,9 @@ public sealed class HorizontalFlipEffect : IVisualEffectDefinition
 				if (!_initialized)
 					return;
 			}
+
+			if (_persistBetweenMinigames)
+				RebindCameraIfNeeded();
 
 			var currentBeat = _jukebox.CurrentBeat;
 			if (currentBeat >= _endBeat)
@@ -128,6 +137,16 @@ public sealed class HorizontalFlipEffect : IVisualEffectDefinition
 			CameraFlipService.RemoveHorizontalFlip(_camera);
 			_camera = null;
 		}
+
+		private void RebindCameraIfNeeded()
+		{
+			Camera? camera = EffectRuntimeController.ResolveEffectCamera(_loader);
+			if (camera is null || _camera == camera)
+				return;
+
+			RemoveFlip();
+			_camera = camera;
+			CameraFlipService.AddHorizontalFlip(camera);
+		}
 	}
 }
-
