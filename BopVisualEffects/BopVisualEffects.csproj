@@ -55,6 +55,18 @@
       <HintPath>$(UnityManagedDir)/UnityEngine.AssetBundleModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="Unity.TextMeshPro" Condition="Exists('$(UnityManagedDir)/Unity.TextMeshPro.dll')">
+      <HintPath>$(UnityManagedDir)/Unity.TextMeshPro.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UI" Condition="Exists('$(UnityManagedDir)/UnityEngine.UI.dll')">
+      <HintPath>$(UnityManagedDir)/UnityEngine.UI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.TextRenderingModule" Condition="Exists('$(UnityManagedDir)/UnityEngine.TextRenderingModule.dll')">
+      <HintPath>$(UnityManagedDir)/UnityEngine.TextRenderingModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="@(GameLibrary)" Condition="'$(UnityManagedDir)' != ''">
       <HintPath>$(UnityManagedDir)/%(Identity).dll</HintPath>
       <Private>false</Private>
