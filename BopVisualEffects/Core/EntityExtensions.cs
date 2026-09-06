@@ -9,6 +9,26 @@ namespace BopVisualEffects.Core;
 internal static class EntityExtensions
 {
 	/// <summary>
+	/// Reads a <see cref="float"/> from an entity property by <paramref name="key"/>.
+	/// Returns <paramref name="fallback"/> when the property is absent.
+	/// </summary>
+	/// <param name="entity">The entity to read from.</param>
+	/// <param name="key">Property key holding the float value.</param>
+	/// <param name="fallback">Value returned when the property is absent. Defaults to 0.</param>
+	public static float GetFloat(this Entity entity, string key, float fallback)
+	{
+		if (!entity.dynamicData.TryGetValue(key, out var value) || value is null)
+			return fallback;
+		return value switch
+		{
+			float f => f,
+			double d => (float)d,
+			int i => i,
+			_ => fallback
+		};
+	}
+
+	/// <summary>
 	/// Reads a <see cref="Color"/> from an entity property by <paramref name="key"/>.
 	/// </summary>
 	/// <remarks>

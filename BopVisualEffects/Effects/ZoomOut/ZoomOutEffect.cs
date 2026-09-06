@@ -32,7 +32,9 @@ public sealed class ZoomOutEffect : IVisualEffectDefinition
 			resizable = true,
 			properties = new Dictionary<string, object>
 			{
-				["intensity"] = 0.2f
+				["intensity"] = 0.2f,
+				["focal_x"] = 0.0f,
+				["focal_y"] = 0.0f
 			}
 		};
 	}
@@ -43,6 +45,8 @@ public sealed class ZoomOutEffect : IVisualEffectDefinition
 		var log = ClassLogger.GetForClass<ZoomOutEffect>();
 		var durationBeats = Mathf.Max(0.01f, entity.length);
 		var intensity = entity.GetFloat("intensity");
+		var focalX = entity.GetFloat("focal_x", 0.0f);
+		var focalY = entity.GetFloat("focal_y", 0.0f);
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
 
@@ -53,7 +57,7 @@ public sealed class ZoomOutEffect : IVisualEffectDefinition
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<ZoomOutRunner>(runner =>
-				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, intensity));
+				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, intensity, focalX, focalY));
 		}
 	}
 
@@ -61,6 +65,8 @@ public sealed class ZoomOutEffect : IVisualEffectDefinition
 	{
 		private bool _initialized;
 		private float _intensity;
+		private float _focalX;
+		private float _focalY;
 		private float _startBeat;
 		private float _endBeat;
 		private MixtapeLoaderCustom? _loader;
@@ -70,13 +76,15 @@ public sealed class ZoomOutEffect : IVisualEffectDefinition
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float intensity)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float intensity, float focalX, float focalY)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
 			_startBeat = startBeat;
 			_endBeat = endBeat;
 			_intensity = Mathf.Max(0f, intensity);
+			_focalX = focalX;
+			_focalY = focalY;
 			InitializeTargetCamera();
 		}
 
@@ -124,7 +132,9 @@ public sealed class ZoomOutEffect : IVisualEffectDefinition
 
 			// Zoom out: zoomFactor > 1 means larger camera size = more zoomed out.
 			var zoomFactor = 1f + _intensity * envelope;
-			CameraZoomService.SetFactor(_camera!, this, zoomFactor);
+
+			// focal_x/focal_y are in NDC space: (0, 0) = screen center (default), (±1, ±1) = screen corners.
+			CameraZoomService.SetFactor(_camera!, this, zoomFactor, new Vector2(_focalX, _focalY));
 		}
 
 		private void OnDisable()

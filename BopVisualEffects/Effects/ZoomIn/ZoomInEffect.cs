@@ -32,7 +32,9 @@ public sealed class ZoomInEffect : IVisualEffectDefinition
 			resizable = true,
 			properties = new Dictionary<string, object>
 			{
-				["intensity"] = 0.2f
+				["intensity"] = 0.2f,
+				["focal_x"] = 0.0f,
+				["focal_y"] = 0.0f
 			}
 		};
 	}
@@ -43,6 +45,8 @@ public sealed class ZoomInEffect : IVisualEffectDefinition
 		var log = ClassLogger.GetForClass<ZoomInEffect>();
 		var durationBeats = Mathf.Max(0.01f, entity.length);
 		var intensity = entity.GetFloat("intensity");
+		var focalX = entity.GetFloat("focal_x", 0.0f);
+		var focalY = entity.GetFloat("focal_y", 0.0f);
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
 
@@ -53,7 +57,7 @@ public sealed class ZoomInEffect : IVisualEffectDefinition
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<ZoomInRunner>(runner =>
-				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, intensity));
+				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, intensity, focalX, focalY));
 		}
 	}
 
@@ -61,6 +65,8 @@ public sealed class ZoomInEffect : IVisualEffectDefinition
 	{
 		private bool _initialized;
 		private float _intensity;
+		private float _focalX;
+		private float _focalY;
 		private float _startBeat;
 		private float _endBeat;
 		private MixtapeLoaderCustom? _loader;
@@ -70,13 +76,15 @@ public sealed class ZoomInEffect : IVisualEffectDefinition
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float intensity)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float intensity, float focalX, float focalY)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
 			_startBeat = startBeat;
 			_endBeat = endBeat;
 			_intensity = Mathf.Clamp(intensity, 0f, 0.99f);
+			_focalX = focalX;
+			_focalY = focalY;
 			InitializeTargetCamera();
 		}
 
@@ -124,7 +132,9 @@ public sealed class ZoomInEffect : IVisualEffectDefinition
 
 			// Zoom in: zoomFactor < 1 means smaller camera size = more zoomed in.
 			var zoomFactor = Mathf.Clamp(1f - _intensity * envelope, 0.01f, 1f);
-			CameraZoomService.SetFactor(_camera!, this, zoomFactor);
+
+			// focal_x/focal_y are in NDC space: (0, 0) = screen center (default), (±1, ±1) = screen corners.
+			CameraZoomService.SetFactor(_camera!, this, zoomFactor, new Vector2(_focalX, _focalY));
 		}
 
 		private void OnDisable()
