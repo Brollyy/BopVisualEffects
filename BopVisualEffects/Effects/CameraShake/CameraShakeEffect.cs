@@ -32,7 +32,8 @@ public sealed class CameraShakeEffect : IVisualEffectDefinition
 			properties = new Dictionary<string, object>
 			{
 				["amplitude"] = 0.1f,
-				["frequency"] = 18.0f
+				["frequency"] = 18.0f,
+				["easing_curve"] = DefaultEasingCurve()
 			}
 		};
 	}
@@ -44,6 +45,7 @@ public sealed class CameraShakeEffect : IVisualEffectDefinition
 		var durationBeats = Mathf.Max(0.01f, entity.length);
 		var amplitude = entity.GetFloat("amplitude");
 		var frequency = entity.GetFloat("frequency");
+		var easingCurve = entity.GetAnimationCurve("easing_curve", DefaultEasingCurve());
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
 
@@ -54,9 +56,14 @@ public sealed class CameraShakeEffect : IVisualEffectDefinition
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<CameraShakeRunner>(runner =>
-				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, amplitude, frequency));
+				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, amplitude, frequency, easingCurve));
 		}
 	}
+
+	private static AnimationCurve DefaultEasingCurve() => new AnimationCurve(
+		new Keyframe(0f, 1f, 0f, -1f),
+		new Keyframe(1f, 0f, -1f, 0f)
+	);
 
 	private sealed class CameraShakeRunner : MonoBehaviour
 	{
@@ -69,11 +76,12 @@ public sealed class CameraShakeEffect : IVisualEffectDefinition
 		private JukeboxScript? _jukebox;
 		private Transform? _targetTransform;
 		private Vector3 _initialLocalPosition;
+		private AnimationCurve _easingCurve = AnimationCurve.Linear(0f, 1f, 1f, 1f);
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float amplitude, float frequency)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float amplitude, float frequency, AnimationCurve easingCurve)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
@@ -81,6 +89,7 @@ public sealed class CameraShakeEffect : IVisualEffectDefinition
 			_endBeat = endBeat;
 			_amplitude = Mathf.Max(0f, amplitude);
 			_frequency = Mathf.Max(0.1f, frequency);
+			_easingCurve = easingCurve;
 			InitializeTargetCamera();
 		}
 
@@ -116,7 +125,7 @@ public sealed class CameraShakeEffect : IVisualEffectDefinition
 			}
 
 			var progress = Mathf.InverseLerp(_startBeat, _endBeat, currentBeat);
-			var envelope = 1f - progress;
+			var envelope = _easingCurve.Evaluate(progress);
 			if (envelope <= 0f)
 			{
 				Stop();

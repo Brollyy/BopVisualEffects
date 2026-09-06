@@ -37,7 +37,8 @@ public sealed class HslEffect : IVisualEffectDefinition
 				["hue_shift"] = 0.0f,
 				["saturation"] = 1.0f,
 				["lightness"] = 0.0f,
-				["intensity"] = 1.0f
+				["intensity"] = 1.0f,
+				["easing_curve"] = DefaultEasingCurve()
 			}
 		};
 	}
@@ -51,6 +52,7 @@ public sealed class HslEffect : IVisualEffectDefinition
 		var saturation = entity.GetFloat("saturation");
 		var lightness = entity.GetFloat("lightness");
 		var intensity = entity.GetFloat("intensity");
+		var easingCurve = entity.GetAnimationCurve("easing_curve", DefaultEasingCurve());
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
 
@@ -61,9 +63,16 @@ public sealed class HslEffect : IVisualEffectDefinition
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<HslRunner>(runner =>
-				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, hueShift, saturation, lightness, intensity));
+				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, hueShift, saturation, lightness, intensity, easingCurve));
 		}
 	}
+
+	private static AnimationCurve DefaultEasingCurve() => new AnimationCurve(
+		new Keyframe(0f, 0f, 0f, 5f),
+		new Keyframe(0.2f, 1f, 5f, 0f),
+		new Keyframe(0.8f, 1f, 0f, -5f),
+		new Keyframe(1f, 0f, -5f, 0f)
+	);
 
 	private sealed class HslRunner : MonoBehaviour
 	{
@@ -78,12 +87,13 @@ public sealed class HslEffect : IVisualEffectDefinition
 		private JukeboxScript? _jukebox;
 		private Camera? _camera;
 		private HslRequest? _request;
+		private AnimationCurve _easingCurve = AnimationCurve.Linear(0f, 1f, 1f, 1f);
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
 		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat,
-			float hueShift, float saturation, float lightness, float intensity)
+			float hueShift, float saturation, float lightness, float intensity, AnimationCurve easingCurve)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
@@ -93,6 +103,7 @@ public sealed class HslEffect : IVisualEffectDefinition
 			_saturation = Mathf.Max(0f, saturation);
 			_lightness = Mathf.Clamp(lightness, -0.5f, 0.5f);
 			_maxIntensity = Mathf.Clamp01(intensity);
+			_easingCurve = easingCurve;
 			InitializeRequest();
 		}
 
@@ -129,13 +140,7 @@ public sealed class HslEffect : IVisualEffectDefinition
 
 			// Fade in over first 20%, hold, fade out over last 20%.
 			var progress = Mathf.InverseLerp(_startBeat, _endBeat, currentBeat);
-			float envelope;
-			if (progress < 0.2f)
-				envelope = Mathf.InverseLerp(0f, 0.2f, progress);
-			else if (progress > 0.8f)
-				envelope = 1f - Mathf.InverseLerp(0.8f, 1f, progress);
-			else
-				envelope = 1f;
+			var envelope = _easingCurve.Evaluate(progress);
 
 			if (_request != null)
 			{

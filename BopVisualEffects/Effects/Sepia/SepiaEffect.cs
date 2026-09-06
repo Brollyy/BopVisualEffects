@@ -34,7 +34,8 @@ public sealed class SepiaEffect : IVisualEffectDefinition
 			resizable = true,
 			properties = new Dictionary<string, object>
 			{
-				["intensity"] = 0.8f
+				["intensity"] = 0.8f,
+				["easing_curve"] = DefaultEasingCurve()
 			}
 		};
 	}
@@ -45,6 +46,7 @@ public sealed class SepiaEffect : IVisualEffectDefinition
 		var log = ClassLogger.GetForClass<SepiaEffect>();
 		var durationBeats = Mathf.Max(0.01f, entity.length);
 		var intensity = entity.GetFloat("intensity");
+		var easingCurve = entity.GetAnimationCurve("easing_curve", DefaultEasingCurve());
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
 
@@ -55,9 +57,16 @@ public sealed class SepiaEffect : IVisualEffectDefinition
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<SepiaRunner>(runner =>
-				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, intensity));
+				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, intensity, easingCurve));
 		}
 	}
+
+	private static AnimationCurve DefaultEasingCurve() => new AnimationCurve(
+		new Keyframe(0f, 0f, 0f, 5f),
+		new Keyframe(0.2f, 1f, 5f, 0f),
+		new Keyframe(0.8f, 1f, 0f, -5f),
+		new Keyframe(1f, 0f, -5f, 0f)
+	);
 
 	private sealed class SepiaRunner : MonoBehaviour
 	{
@@ -69,17 +78,19 @@ public sealed class SepiaEffect : IVisualEffectDefinition
 		private JukeboxScript? _jukebox;
 		private Camera? _camera;
 		private SepiaRequest? _request;
+		private AnimationCurve _easingCurve = AnimationCurve.Linear(0f, 1f, 1f, 1f);
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float intensity)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float intensity, AnimationCurve easingCurve)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
 			_startBeat = startBeat;
 			_endBeat = endBeat;
 			_maxIntensity = Mathf.Clamp01(intensity);
+			_easingCurve = easingCurve;
 			InitializeRequest();
 		}
 
@@ -116,13 +127,7 @@ public sealed class SepiaEffect : IVisualEffectDefinition
 
 			// Fade in over first 20%, hold, fade out over last 20%.
 			var progress = Mathf.InverseLerp(_startBeat, _endBeat, currentBeat);
-			float envelope;
-			if (progress < 0.2f)
-				envelope = Mathf.InverseLerp(0f, 0.2f, progress);
-			else if (progress > 0.8f)
-				envelope = 1f - Mathf.InverseLerp(0.8f, 1f, progress);
-			else
-				envelope = 1f;
+			var envelope = _easingCurve.Evaluate(progress);
 
 			if (_request != null)
 				_request.Intensity = _maxIntensity * envelope;

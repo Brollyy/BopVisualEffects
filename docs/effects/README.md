@@ -13,6 +13,7 @@ Adds a temporary camera shake effect for impact, hits, drops, or strong rhythm a
 **Properties**
 - `amplitude`: Strength of the shake.
 - `frequency`: Speed of the shake movement.
+- `easing_curve`: Animation curve controlling shake strength over the event duration (default: linear decay from full strength to zero).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
 
 **Preview**
@@ -29,6 +30,7 @@ Briefly tilts the camera on its Z-axis with a smooth swing arc.
 
 **Properties**
 - `angle`: Maximum tilt angle in degrees (positive = counter-clockwise).
+- `easing_curve`: Animation curve controlling tilt angle over the event duration (default: smooth bell curve peaking at the midpoint).
 - `length` (event length in editor): How long the tilt lasts, in beats. This event is resizable in the timeline.
 
 **Preview**
@@ -45,6 +47,7 @@ Applies a sustained full-screen color tint that fades in, holds, then fades out.
 
 **Properties**
 - `color`: Tint color (default `#ff000040` — red with slight opacity).
+- `easing_curve`: Animation curve controlling tint opacity over the event duration (default: fade in, hold, then fade out).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
 
 **Preview**
@@ -62,6 +65,7 @@ Draws a ground fog gradient overlay - opaque at the bottom of the screen, fading
 **Properties**
 - `color`: Fog color (default `#CCCCE599` - pale blue-gray).
 - `height`: Normalized screen height at which the fog fully fades to transparent (0–1; default `0.5`).
+- `easing_curve`: Animation curve controlling fog opacity over the event duration (default: fade in, hold, then fade out).
 - `length` (event length in editor): How long the fog lasts, in beats. This event is resizable in the timeline.
 
 **Preview**
@@ -96,6 +100,7 @@ Adjusts hue, saturation and lightness of the whole screen for colour grading usi
 - `saturation`: Saturation multiplier (0 = fully greyscale, 1 = unchanged, >1 = boosted; default `1.0`). Boost above 1 requires shader bundle.
 - `lightness`: Additive lightness offset (-0.5–0.5; default `0`). Positive values brighten, negative values darken.
 - `intensity`: Overall blend strength (0–1; default `1.0`).
+- `easing_curve`: Animation curve controlling filter intensity over the event duration (default: fade in, hold, then fade out).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
 
 **Preview**
@@ -112,6 +117,7 @@ Adds cinematic black bars at the top and bottom of the screen for a dramatic wid
 
 **Properties**
 - `size`: Height of each bar as a normalized screen fraction (0–0.49; default `0.1`).
+- `easing_curve`: Animation curve controlling bar height over the event duration (default: fade in, hold, then fade out).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
 
 **Preview**
@@ -128,6 +134,7 @@ Pixelates the screen by downsampling the camera's rendered output to a low-resol
 
 **Properties**
 - `pixel_size`: Size of each pixel block in screen pixels (2–64; default `4`). Larger values produce a more pronounced 8-bit look.
+- `easing_curve`: Animation curve controlling pixelation over the event duration (default: ramp in, hold, then ramp out).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
 
 **Preview**
@@ -146,6 +153,7 @@ Draws horizontal CRT-style scan lines over the screen for a retro aesthetic. Can
 - `alpha`: Darkness of each scan line (0–1; default `0.35`).
 - `count`: Number of scan lines (default `60`, clamped 4–2000).
 - `scroll_speed`: Speed at which lines scroll upward, in cells per second (default `0` = static; negative = scroll downward).
+- `easing_curve`: Animation curve controlling scanline opacity over the event duration (default: fade in, hold, then fade out).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
 
 **Preview**
@@ -164,6 +172,7 @@ Draws animated TV static noise specks over the screen for a glitchy atmosphere.
 - `alpha`: Maximum opacity of the noise specks (0–1; default `0.5`).
 - `count`: Number of noise specks drawn per frame (10–2000; default `400`).
 - `size`: Physical size of each speck in normalized screen coordinates (0.005–0.1; default `0.01`).
+- `easing_curve`: Animation curve controlling noise opacity over the event duration (default: fade in, hold, then fade out).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
 
 **Preview**
@@ -180,6 +189,7 @@ Applies a warm vintage sepia-tone filter using a per-pixel shader (standard Adob
 
 **Properties**
 - `intensity`: Strength of the sepia toning (0–1; default `0.8`).
+- `easing_curve`: Animation curve controlling filter intensity over the event duration (default: fade in, hold, then fade out).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
 
 **Preview**
@@ -212,6 +222,7 @@ Darkens the screen edges with a smooth radial/elliptical gradient using a 32-seg
 **Properties**
 - `alpha`: Darkness of the edge (0–1; default `0.7`).
 - `size`: How far the darkening extends inward as a fraction of screen half-height (0–0.5; default `0.1`).
+- `easing_curve`: Animation curve controlling vignette opacity over the event duration (default: fade in, hold, then fade out).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
 
 **Preview**
@@ -228,6 +239,7 @@ Eases the camera smoothly into a zoomed-in view, holds at the target level, then
 
 **Properties**
 - `intensity`: How far to zoom in, as a fraction of the camera's base size (e.g. `0.2` = 20% closer). Clamped to `[0, 0.99]`.
+- `easing_curve`: Animation curve controlling zoom intensity over the event duration (default: smooth ease in, hold, then ease out).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
 
 **Preview**
@@ -244,6 +256,7 @@ Eases the camera smoothly out to a wider view, holds, then eases back in. Compos
 
 **Properties**
 - `intensity`: How far to zoom out, as a fraction of the camera's base size (e.g. `0.2` = 20% further out).
+- `easing_curve`: Animation curve controlling zoom intensity over the event duration (default: smooth ease out, hold, then ease back in).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
 
 **Preview**
