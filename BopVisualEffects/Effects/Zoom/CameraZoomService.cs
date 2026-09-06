@@ -88,10 +88,11 @@ internal static class CameraZoomService
 		if (state.Entries.Count == 0)
 		{
 			RestoreBaseline(camera, state);
-			if (state.Overlay)
+			var overlay = state.Overlay;
+			if (overlay)
 			{
-				state.Overlay.SetNDCOffset(Vector2.zero);
-				Object.Destroy(state.Overlay);
+				overlay!.SetNDCOffset(Vector2.zero);
+				Object.Destroy(overlay);
 			}
 			_states.Remove(camera);
 		}
@@ -122,8 +123,9 @@ internal static class CameraZoomService
 		else
 			camera.fieldOfView = Mathf.Min(state.BaselineFieldOfView * compositeZoom, 179f);
 
-		if (state.Overlay)
-			state.Overlay.SetNDCOffset(compositeNDCOffset);
+		var overlay = state.Overlay;
+		if (overlay)
+			overlay!.SetNDCOffset(compositeNDCOffset);
 	}
 
 	private static void RestoreBaseline(Camera camera, ZoomState state)
@@ -161,13 +163,14 @@ internal static class CameraZoomService
 		// of whatever projection matrix is already in effect this frame (e.g. flip from CameraFlipOverlay).
 		private void OnPreCull()
 		{
-			if (!_camera || _ndcOffset == Vector2.zero)
+			var camera = _camera;
+			if (!camera || _ndcOffset == Vector2.zero)
 				return;
 
 			var offsetMatrix = Matrix4x4.identity;
 			offsetMatrix.m03 = _ndcOffset.x;
 			offsetMatrix.m13 = _ndcOffset.y;
-			_camera.projectionMatrix = offsetMatrix * _camera.projectionMatrix;
+			camera!.projectionMatrix = offsetMatrix * camera.projectionMatrix;
 		}
 
 		// Fires after the camera finishes rendering — restore natural projection for next frame.
@@ -177,8 +180,9 @@ internal static class CameraZoomService
 
 		private void ResetProjection()
 		{
-			if (_camera)
-				_camera.ResetProjectionMatrix();
+			var camera = _camera;
+			if (camera)
+				camera!.ResetProjectionMatrix();
 		}
 	}
 }
