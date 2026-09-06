@@ -9,6 +9,10 @@ BepInEx 5.x mod for Bits & Bops that adds additional visual effects for the in-g
 3. Place `BopVisualEffects.dll` in `<GameRoot>/BepInEx/plugins/`.
 4. Launch the game — effects will be available in the in-game editor.
 
+The mod currently targets Bits & Bops 1.13.0 (Steam BuildID 24990737, released August 29, 2026).
+The CI workflow downloads the current Steam build and uses a versioned managed-DLL
+cache so updates cannot silently compile against stale game references.
+
 ## Available effects
 
 See [this document](docs/effects/README.md) for the full list of effects this mod enables.
