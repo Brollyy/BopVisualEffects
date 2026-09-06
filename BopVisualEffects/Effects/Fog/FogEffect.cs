@@ -33,7 +33,9 @@ public sealed class FogEffect : IVisualEffectDefinition
 			properties = new Dictionary<string, object>
 			{
 				["color"] = new MixtapeEventTemplates.ColorField(new Color(0.8f, 0.8f, 0.9f, 0.6f)),
-				["height"] = 0.5f
+				["height"] = 0.5f,
+				["ease_in"] = true,
+				["ease_out"] = true
 			}
 		};
 	}
@@ -45,6 +47,8 @@ public sealed class FogEffect : IVisualEffectDefinition
 		var durationBeats = Mathf.Max(0.01f, entity.length);
 		var color = entity.GetColor("color");
 		var height = entity.GetFloat("height");
+		var easeIn = entity.GetBool("ease_in", true);
+		var easeOut = entity.GetBool("ease_out", true);
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
 
@@ -55,7 +59,7 @@ public sealed class FogEffect : IVisualEffectDefinition
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<FogRunner>(runner =>
-				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, color, height));
+				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, color, height, easeIn, easeOut));
 		}
 	}
 
@@ -69,11 +73,13 @@ public sealed class FogEffect : IVisualEffectDefinition
 		private MixtapeLoaderCustom? _loader;
 		private JukeboxScript? _jukebox;
 		private FogOverlay? _overlay;
+		private bool _easeIn;
+		private bool _easeOut;
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, Color color, float height)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, Color color, float height, bool easeIn, bool easeOut)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
@@ -81,6 +87,8 @@ public sealed class FogEffect : IVisualEffectDefinition
 			_endBeat = endBeat;
 			_color = new Color(Mathf.Clamp01(color.r), Mathf.Clamp01(color.g), Mathf.Clamp01(color.b), Mathf.Clamp01(color.a));
 			_height = Mathf.Clamp01(height);
+			_easeIn = easeIn;
+			_easeOut = easeOut;
 			InitializeOverlay();
 		}
 
@@ -117,13 +125,7 @@ public sealed class FogEffect : IVisualEffectDefinition
 
 			// Fade in over first 20%, hold, fade out over last 20%.
 			var progress = Mathf.InverseLerp(_startBeat, _endBeat, currentBeat);
-			float envelope;
-			if (progress < 0.2f)
-				envelope = Mathf.InverseLerp(0f, 0.2f, progress);
-			else if (progress > 0.8f)
-				envelope = 1f - Mathf.InverseLerp(0.8f, 1f, progress);
-			else
-				envelope = 1f;
+			var envelope = EffectEnvelope.Evaluate(progress, _easeIn, _easeOut);
 
 			if (_overlay != null)
 				_overlay.SetParams(new Color(_color.r, _color.g, _color.b, _color.a * envelope), _height);
