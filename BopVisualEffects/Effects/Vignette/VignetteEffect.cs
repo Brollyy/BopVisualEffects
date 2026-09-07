@@ -33,7 +33,9 @@ public sealed class VignetteEffect : IVisualEffectDefinition
 			properties = new Dictionary<string, object>
 			{
 				["alpha"] = 0.7f,
-				["size"] = 0.1f
+				["size"] = 0.1f,
+				["ease_in"] = true,
+				["ease_out"] = true
 			}
 		};
 	}
@@ -45,6 +47,8 @@ public sealed class VignetteEffect : IVisualEffectDefinition
 		var durationBeats = Mathf.Max(0.01f, entity.length);
 		var alpha = entity.GetFloat("alpha");
 		var size = entity.GetFloat("size");
+		var easeIn = entity.GetBool("ease_in", true);
+		var easeOut = entity.GetBool("ease_out", true);
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
 
@@ -55,7 +59,7 @@ public sealed class VignetteEffect : IVisualEffectDefinition
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<VignetteRunner>(runner =>
-				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, alpha, size));
+				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, alpha, size, easeIn, easeOut));
 		}
 	}
 
@@ -69,11 +73,13 @@ public sealed class VignetteEffect : IVisualEffectDefinition
 		private MixtapeLoaderCustom? _loader;
 		private JukeboxScript? _jukebox;
 		private VignetteOverlay? _overlay;
+		private bool _easeIn;
+		private bool _easeOut;
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float alpha, float size)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float alpha, float size, bool easeIn, bool easeOut)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
@@ -81,6 +87,8 @@ public sealed class VignetteEffect : IVisualEffectDefinition
 			_endBeat = endBeat;
 			_alpha = Mathf.Clamp01(alpha);
 			_size = Mathf.Clamp(size, 0f, 0.5f);
+			_easeIn = easeIn;
+			_easeOut = easeOut;
 			InitializeOverlay();
 		}
 
@@ -117,13 +125,7 @@ public sealed class VignetteEffect : IVisualEffectDefinition
 
 			// Fade in over first 20%, hold, fade out over last 20%.
 			var progress = Mathf.InverseLerp(_startBeat, _endBeat, currentBeat);
-			float envelope;
-			if (progress < 0.2f)
-				envelope = Mathf.InverseLerp(0f, 0.2f, progress);
-			else if (progress > 0.8f)
-				envelope = 1f - Mathf.InverseLerp(0.8f, 1f, progress);
-			else
-				envelope = 1f;
+			var envelope = EffectEnvelope.Evaluate(progress, _easeIn, _easeOut);
 
 			if (_overlay != null)
 				_overlay.SetParams(_alpha * envelope, _size);
