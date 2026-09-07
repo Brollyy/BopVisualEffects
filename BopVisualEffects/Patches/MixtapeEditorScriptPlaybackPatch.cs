@@ -6,7 +6,7 @@ using HarmonyLib;
 namespace BopVisualEffects.Patches;
 
 /// <summary>
-/// Stops all active visual effect runners when editor playback is stopped/paused.
+/// Stops all active visual effect runners when editor playback is stopped.
 /// </summary>
 [HarmonyPatch]
 public static class MixtapeEditorScriptPlaybackPatch
@@ -19,10 +19,6 @@ public static class MixtapeEditorScriptPlaybackPatch
 		MethodBase? playOrStop = AccessTools.Method(typeof(MixtapeEditorScript), "PlayOrStopMixtape");
 		if (playOrStop is not null)
 			yield return playOrStop;
-
-		MethodBase? pauseOrUnpause = AccessTools.Method(typeof(MixtapeEditorScript), "PauseOrUnpauseMixtape");
-		if (pauseOrUnpause is not null)
-			yield return pauseOrUnpause;
 
 		MethodBase? filePause = AccessTools.Method(typeof(MixtapeEditorScript), "FilePause");
 		if (filePause is not null)
