@@ -23,6 +23,10 @@ public static class MixtapeEditorScriptPlaybackPatch
 		MethodBase? filePause = AccessTools.Method(typeof(MixtapeEditorScript), "FilePause");
 		if (filePause is not null)
 			yield return filePause;
+
+		MethodBase? pauseOrUnpause = AccessTools.Method(typeof(MixtapeEditorScript), "PauseOrUnpauseMixtape");
+		if (pauseOrUnpause is not null)
+			yield return pauseOrUnpause;
 	}
 
 	/// <summary>
