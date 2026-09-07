@@ -33,7 +33,9 @@ public sealed class ZoomInEffect : IVisualEffectDefinition
 			properties = new Dictionary<string, object>
 			{
 				["intensity"] = 0.2f,
-				["persist_between_minigames"] = false
+				["persist_between_minigames"] = false,
+				["ease_in"] = true,
+				["ease_out"] = true
 			}
 		};
 	}
@@ -45,6 +47,8 @@ public sealed class ZoomInEffect : IVisualEffectDefinition
 		var durationBeats = Mathf.Max(0.01f, entity.length);
 		var intensity = entity.GetFloat("intensity");
 		var persist = entity.GetBool("persist_between_minigames", false);
+		var easeIn = entity.GetBool("ease_in", true);
+		var easeOut = entity.GetBool("ease_out", true);
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
 
@@ -55,7 +59,7 @@ public sealed class ZoomInEffect : IVisualEffectDefinition
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<ZoomInRunner>(runner =>
-				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, intensity, persist));
+				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, intensity, persist, easeIn, easeOut));
 		}
 	}
 
@@ -69,11 +73,13 @@ public sealed class ZoomInEffect : IVisualEffectDefinition
 		private JukeboxScript? _jukebox;
 		private Camera? _camera;
 		private bool _persistBetweenMinigames;
+		private bool _easeIn;
+		private bool _easeOut;
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float intensity, bool persistBetweenMinigames)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float intensity, bool persistBetweenMinigames, bool easeIn, bool easeOut)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
@@ -81,6 +87,8 @@ public sealed class ZoomInEffect : IVisualEffectDefinition
 			_endBeat = endBeat;
 			_intensity = Mathf.Clamp(intensity, 0f, 0.99f);
 			_persistBetweenMinigames = persistBetweenMinigames;
+			_easeIn = easeIn;
+			_easeOut = easeOut;
 			InitializeTargetCamera();
 		}
 
@@ -121,13 +129,8 @@ public sealed class ZoomInEffect : IVisualEffectDefinition
 
 			// Ease in over first 20%, hold zoomed in from 20-80%, ease back out over last 20%.
 			var progress = Mathf.InverseLerp(_startBeat, _endBeat, currentBeat);
-			float envelope;
-			if (progress < 0.2f)
-				envelope = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0f, 0.2f, progress));
-			else if (progress > 0.8f)
-				envelope = Mathf.SmoothStep(0f, 1f, 1f - Mathf.InverseLerp(0.8f, 1f, progress));
-			else
-				envelope = 1f;
+			var envelope = EffectEnvelope.Evaluate(progress, _easeIn, _easeOut);
+
 
 			// Zoom in: zoomFactor < 1 means smaller camera size = more zoomed in.
 			var zoomFactor = Mathf.Clamp(1f - _intensity * envelope, 0.01f, 1f);

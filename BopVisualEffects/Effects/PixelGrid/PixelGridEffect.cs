@@ -34,7 +34,9 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 			properties = new Dictionary<string, object>
 			{
 				["pixel_size"] = 4.0f,
-				["persist_between_minigames"] = false
+				["persist_between_minigames"] = false,
+				["ease_in"] = true,
+				["ease_out"] = true
 			}
 		};
 	}
@@ -46,6 +48,8 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 		var durationBeats = Mathf.Max(0.01f, entity.length);
 		var pixelSize = entity.GetFloat("pixel_size");
 		var persist = entity.GetBool("persist_between_minigames", false);
+		var easeIn = entity.GetBool("ease_in", true);
+		var easeOut = entity.GetBool("ease_out", true);
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
 
@@ -56,7 +60,7 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<PixelGridRunner>(runner =>
-				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, pixelSize, persist));
+				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, pixelSize, persist, easeIn, easeOut));
 		}
 	}
 
@@ -71,11 +75,13 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 		private PixelGridOverlay? _overlay;
 		private Camera? _camera;
 		private bool _persistBetweenMinigames;
+		private bool _easeIn;
+		private bool _easeOut;
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float pixelSize, bool persistBetweenMinigames)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float pixelSize, bool persistBetweenMinigames, bool easeIn, bool easeOut)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
@@ -83,6 +89,8 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 			_endBeat = endBeat;
 			_pixelSize = Mathf.Clamp(Mathf.RoundToInt(pixelSize), 2, 64);
 			_persistBetweenMinigames = persistBetweenMinigames;
+			_easeIn = easeIn;
+			_easeOut = easeOut;
 			InitializeOverlay();
 		}
 
@@ -123,15 +131,9 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 			// Ramp block size up over first 15%, hold, ramp down over last 15%.
 			// block_size=1 means no pixelation; ramping from 1 → _pixelSize gives a "zooming into pixels" look.
 			var progress = Mathf.InverseLerp(_startBeat, _endBeat, currentBeat);
-			float envelope;
-			if (progress < 0.15f)
-				envelope = Mathf.InverseLerp(0f, 0.15f, progress);
-			else if (progress > 0.85f)
-				envelope = 1f - Mathf.InverseLerp(0.85f, 1f, progress);
-			else
-				envelope = 1f;
-
+			var envelope = EffectEnvelope.Evaluate(progress, _easeIn, _easeOut, 0.15f, 0.85f);
 			var currentBlockSize = Mathf.Max(1, Mathf.RoundToInt(Mathf.Lerp(1f, _pixelSize, envelope)));
+
 			if (_overlay != null)
 				_overlay.SetBlockSize(currentBlockSize);
 		}

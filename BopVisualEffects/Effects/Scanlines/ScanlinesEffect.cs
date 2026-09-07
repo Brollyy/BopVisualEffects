@@ -35,7 +35,9 @@ public sealed class ScanlinesEffect : IVisualEffectDefinition
 				["alpha"] = 0.35f,
 				["count"] = 60.0f,
 				["scroll_speed"] = 0.0f,
-				["persist_between_minigames"] = false
+				["persist_between_minigames"] = false,
+				["ease_in"] = true,
+				["ease_out"] = true
 			}
 		};
 	}
@@ -49,6 +51,8 @@ public sealed class ScanlinesEffect : IVisualEffectDefinition
 		var count = entity.GetFloat("count");
 		var scrollSpeed = entity.GetFloat("scroll_speed");
 		var persist = entity.GetBool("persist_between_minigames", false);
+		var easeIn = entity.GetBool("ease_in", true);
+		var easeOut = entity.GetBool("ease_out", true);
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
 
@@ -59,7 +63,7 @@ public sealed class ScanlinesEffect : IVisualEffectDefinition
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<ScanlinesRunner>(runner =>
-				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, alpha, count, scrollSpeed, persist));
+				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, alpha, count, scrollSpeed, persist, easeIn, easeOut));
 		}
 	}
 
@@ -76,11 +80,13 @@ public sealed class ScanlinesEffect : IVisualEffectDefinition
 		private ScanlinesOverlay? _overlay;
 		private Camera? _camera;
 		private bool _persistBetweenMinigames;
+		private bool _easeIn;
+		private bool _easeOut;
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float alpha, float count, float scrollSpeed, bool persistBetweenMinigames)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float alpha, float count, float scrollSpeed, bool persistBetweenMinigames, bool easeIn, bool easeOut)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
@@ -90,6 +96,8 @@ public sealed class ScanlinesEffect : IVisualEffectDefinition
 			_count = Mathf.Clamp(Mathf.RoundToInt(count), 4, 2000);
 			_scrollSpeed = scrollSpeed;
 			_persistBetweenMinigames = persistBetweenMinigames;
+			_easeIn = easeIn;
+			_easeOut = easeOut;
 			InitializeOverlay();
 		}
 
@@ -129,13 +137,7 @@ public sealed class ScanlinesEffect : IVisualEffectDefinition
 
 			// Fade in over first 15%, hold, fade out over last 15%.
 			var progress = Mathf.InverseLerp(_startBeat, _endBeat, currentBeat);
-			float envelope;
-			if (progress < 0.15f)
-				envelope = Mathf.InverseLerp(0f, 0.15f, progress);
-			else if (progress > 0.85f)
-				envelope = 1f - Mathf.InverseLerp(0.85f, 1f, progress);
-			else
-				envelope = 1f;
+			var envelope = EffectEnvelope.Evaluate(progress, _easeIn, _easeOut, 0.15f, 0.85f);
 
 			if (_overlay != null)
 				_overlay.SetParams(_alpha * envelope, _count, _scrollSpeed);
