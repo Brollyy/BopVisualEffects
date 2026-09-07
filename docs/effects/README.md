@@ -222,7 +222,7 @@ Draws an animated, noise-driven radial speed-line vignette. Thin colored streak 
 
 **Preview**
 
-<!-- TODO: record preview .mp4 in-game, upload to GitHub, and replace this placeholder with the link -->
+https://github.com/user-attachments/assets/edddc3f0-6b81-4b29-9956-da7df65da25b
 
 ## Vertical Flip
 
