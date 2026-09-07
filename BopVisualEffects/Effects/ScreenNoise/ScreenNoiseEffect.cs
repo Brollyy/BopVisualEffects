@@ -34,7 +34,9 @@ public sealed class ScreenNoiseEffect : IVisualEffectDefinition
 			{
 				["alpha"] = 0.5f,
 				["count"] = 400.0f,
-				["size"] = 0.01f
+				["size"] = 0.01f,
+				["ease_in"] = true,
+				["ease_out"] = true
 			}
 		};
 	}
@@ -47,6 +49,8 @@ public sealed class ScreenNoiseEffect : IVisualEffectDefinition
 		var alpha = entity.GetFloat("alpha");
 		var count = entity.GetFloat("count");
 		var size = entity.GetFloat("size");
+		var easeIn = entity.GetBool("ease_in", true);
+		var easeOut = entity.GetBool("ease_out", true);
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
 
@@ -57,7 +61,7 @@ public sealed class ScreenNoiseEffect : IVisualEffectDefinition
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<ScreenNoiseRunner>(runner =>
-				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, alpha, count, size));
+				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, alpha, count, size, easeIn, easeOut));
 		}
 	}
 
@@ -72,11 +76,13 @@ public sealed class ScreenNoiseEffect : IVisualEffectDefinition
 		private MixtapeLoaderCustom? _loader;
 		private JukeboxScript? _jukebox;
 		private ScreenNoiseOverlay? _overlay;
+		private bool _easeIn;
+		private bool _easeOut;
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float alpha, float count, float size)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float alpha, float count, float size, bool easeIn, bool easeOut)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
@@ -85,6 +91,8 @@ public sealed class ScreenNoiseEffect : IVisualEffectDefinition
 			_alpha = Mathf.Clamp01(alpha);
 			_count = Mathf.Clamp(Mathf.RoundToInt(count), 10, 2000);
 			_size = Mathf.Clamp(size, 0.005f, 0.1f);
+			_easeIn = easeIn;
+			_easeOut = easeOut;
 			InitializeOverlay();
 		}
 
@@ -121,13 +129,7 @@ public sealed class ScreenNoiseEffect : IVisualEffectDefinition
 
 			// Fade in over first 15%, hold, fade out over last 15%.
 			var progress = Mathf.InverseLerp(_startBeat, _endBeat, currentBeat);
-			float envelope;
-			if (progress < 0.15f)
-				envelope = Mathf.InverseLerp(0f, 0.15f, progress);
-			else if (progress > 0.85f)
-				envelope = 1f - Mathf.InverseLerp(0.85f, 1f, progress);
-			else
-				envelope = 1f;
+			var envelope = EffectEnvelope.Evaluate(progress, _easeIn, _easeOut, 0.15f, 0.85f);
 
 			if (_overlay != null)
 				_overlay.SetParams(_alpha * envelope, _count, _size);
