@@ -200,6 +200,7 @@ Draws an animated, noise-driven radial speed-line vignette. Thin colored streak 
 - `speed`: Animation rate of the procedural noise in cycles per second (default `3.5`). Higher values produce faster-moving streaks.
 - `reach`: How far each speed line reaches toward the screen center as a normalized edge-to-center fraction (0–1; default `0.25`). `0` keeps the effect at the screen edge; `1` reaches the center. The calculation accounts for the screen aspect ratio.
 - `color`: Color and base opacity of the speed lines (default white).
+- `easing_curve`: Animation curve controlling speed-line opacity over the event duration (default: fade in over 15%, hold, then fade out over 15%).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
 
 **Preview**

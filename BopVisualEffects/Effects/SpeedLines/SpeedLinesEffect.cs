@@ -38,7 +38,8 @@ public sealed class SpeedLinesEffect : IVisualEffectDefinition
 				["count"] = 96.0f,
 				["speed"] = 3.5f,
 				["reach"] = DefaultReach,
-				["color"] = new MixtapeEventTemplates.ColorField(Color.white)
+				["color"] = new MixtapeEventTemplates.ColorField(Color.white),
+				["easing_curve"] = DefaultEasingCurve()
 			}
 		};
 	}
@@ -53,6 +54,7 @@ public sealed class SpeedLinesEffect : IVisualEffectDefinition
 		var speed = entity.GetFloat("speed");
 		var reach = entity.GetFloat("reach");
 		var color = entity.GetColor("color");
+		var easingCurve = entity.GetAnimationCurve("easing_curve", DefaultEasingCurve());
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
 		loader.scheduler.Schedule(startBeat, (System.Action?)SpawnAction);
@@ -62,9 +64,16 @@ public sealed class SpeedLinesEffect : IVisualEffectDefinition
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<SpeedLinesRunner>(runner =>
-				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, alpha, count, speed, reach, color));
+				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, alpha, count, speed, reach, color, easingCurve));
 		}
 	}
+
+	private static AnimationCurve DefaultEasingCurve() => new AnimationCurve(
+		new Keyframe(0f, 0f, 0f, 20f / 3f),
+		new Keyframe(0.15f, 1f, 20f / 3f, 0f),
+		new Keyframe(0.85f, 1f, 0f, -20f / 3f),
+		new Keyframe(1f, 0f, -20f / 3f, 0f)
+	);
 
 	private sealed class SpeedLinesRunner : MonoBehaviour
 	{
@@ -80,11 +89,12 @@ public sealed class SpeedLinesEffect : IVisualEffectDefinition
 		private JukeboxScript? _jukebox;
 		private Camera? _camera;
 		private SpeedLinesRequest? _request;
+		private AnimationCurve _easingCurve = AnimationCurve.Linear(0f, 1f, 1f, 1f);
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float alpha, float count, float speed, float reach, Color color)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float alpha, float count, float speed, float reach, Color color, AnimationCurve easingCurve)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
@@ -95,6 +105,7 @@ public sealed class SpeedLinesEffect : IVisualEffectDefinition
 			_speed = Mathf.Max(0.1f, speed);
 			_reach = Mathf.Clamp01(reach);
 			_color = new Color(Mathf.Clamp01(color.r), Mathf.Clamp01(color.g), Mathf.Clamp01(color.b), Mathf.Clamp01(color.a));
+			_easingCurve = easingCurve;
 			InitializeOverlay();
 		}
 
@@ -129,15 +140,8 @@ public sealed class SpeedLinesEffect : IVisualEffectDefinition
 				return;
 			}
 
-			// Fade in over first 15%, hold, fade out over last 15%.
 			var progress = Mathf.InverseLerp(_startBeat, _endBeat, currentBeat);
-			float envelope;
-			if (progress < 0.15f)
-				envelope = Mathf.InverseLerp(0f, 0.15f, progress);
-			else if (progress > 0.85f)
-				envelope = 1f - Mathf.InverseLerp(0.85f, 1f, progress);
-			else
-				envelope = 1f;
+			var envelope = _easingCurve.Evaluate(progress);
 
 			if (_request != null)
 				_request.Alpha = _alpha * envelope;
