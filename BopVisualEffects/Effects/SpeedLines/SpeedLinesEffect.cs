@@ -10,6 +10,8 @@ namespace BopVisualEffects.Effects.SpeedLines;
 /// </summary>
 public sealed class SpeedLinesEffect : IVisualEffectDefinition
 {
+	private const float DefaultReach = 0.25f;
+
 	/// <inheritdoc />
 	public string Id => "speed lines";
 
@@ -20,7 +22,7 @@ public sealed class SpeedLinesEffect : IVisualEffectDefinition
 	public string ConfigKey => "SpeedLines";
 
 	/// <inheritdoc />
-	public string Description => "Draws animated black triangles radiating inward from the screen edges for a high-speed rush feeling.";
+	public string Description => "Applies an animated, colored radial speed-line post-processing effect for a high-speed rush feeling.";
 
 	/// <inheritdoc />
 	public MixtapeEventTemplate CreateTemplate(string pluginGuid)
@@ -33,8 +35,12 @@ public sealed class SpeedLinesEffect : IVisualEffectDefinition
 			properties = new Dictionary<string, object>
 			{
 				["alpha"] = 0.8f,
-				["count"] = 20.0f,
-				["speed"] = 3.5f
+				["count"] = 96.0f,
+				["speed"] = 3.5f,
+				["reach"] = DefaultReach,
+				["color"] = new MixtapeEventTemplates.ColorField(Color.white),
+				["ease_in"] = true,
+				["ease_out"] = true
 			}
 		};
 	}
@@ -47,9 +53,12 @@ public sealed class SpeedLinesEffect : IVisualEffectDefinition
 		var alpha = entity.GetFloat("alpha");
 		var count = entity.GetFloat("count");
 		var speed = entity.GetFloat("speed");
+		var reach = entity.GetFloat("reach");
+		var color = entity.GetColor("color");
+		var easeIn = entity.GetBool("ease_in", true);
+		var easeOut = entity.GetBool("ease_out", true);
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
-
 		loader.scheduler.Schedule(startBeat, (System.Action?)SpawnAction);
 		log.Debug($"Scheduled '{DisplayName}' from beat {startBeat:0.###} to {endBeat:0.###}.");
 		return true;
@@ -57,7 +66,7 @@ public sealed class SpeedLinesEffect : IVisualEffectDefinition
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<SpeedLinesRunner>(runner =>
-				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, alpha, count, speed));
+				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, alpha, count, speed, reach, color, easeIn, easeOut));
 		}
 	}
 
@@ -67,24 +76,33 @@ public sealed class SpeedLinesEffect : IVisualEffectDefinition
 		private float _alpha;
 		private int _count;
 		private float _speed;
+		private float _reach;
+		private Color _color;
 		private float _startBeat;
 		private float _endBeat;
 		private MixtapeLoaderCustom? _loader;
 		private JukeboxScript? _jukebox;
-		private SpeedLinesOverlay? _overlay;
+		private Camera? _camera;
+		private SpeedLinesRequest? _request;
+		private bool _easeIn;
+		private bool _easeOut;
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float alpha, float count, float speed)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float alpha, float count, float speed, float reach, Color color, bool easeIn, bool easeOut)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
 			_startBeat = startBeat;
 			_endBeat = endBeat;
 			_alpha = Mathf.Clamp01(alpha);
-			_count = Mathf.Clamp(Mathf.RoundToInt(count), 4, 64);
+			_count = Mathf.Clamp(Mathf.RoundToInt(count), 24, 192);
 			_speed = Mathf.Max(0.1f, speed);
+			_reach = Mathf.Clamp01(reach);
+			_color = new Color(Mathf.Clamp01(color.r), Mathf.Clamp01(color.g), Mathf.Clamp01(color.b), Mathf.Clamp01(color.a));
+			_easeIn = easeIn;
+			_easeOut = easeOut;
 			InitializeOverlay();
 		}
 
@@ -119,18 +137,11 @@ public sealed class SpeedLinesEffect : IVisualEffectDefinition
 				return;
 			}
 
-			// Fade in over first 15%, hold, fade out over last 15%.
 			var progress = Mathf.InverseLerp(_startBeat, _endBeat, currentBeat);
-			float envelope;
-			if (progress < 0.15f)
-				envelope = Mathf.InverseLerp(0f, 0.15f, progress);
-			else if (progress > 0.85f)
-				envelope = 1f - Mathf.InverseLerp(0.85f, 1f, progress);
-			else
-				envelope = 1f;
+			var envelope = EffectEnvelope.Evaluate(progress, _easeIn, _easeOut, 0.15f, 0.85f);
 
-			if (_overlay != null)
-				_overlay.SetParams(_alpha * envelope, _speed);
+			if (_request != null)
+				_request.Alpha = _alpha * envelope;
 		}
 
 		private void OnDisable()
@@ -144,58 +155,54 @@ public sealed class SpeedLinesEffect : IVisualEffectDefinition
 			if (camera is null)
 				return;
 
-			_overlay = camera.gameObject.AddComponent<SpeedLinesOverlay>();
-			_overlay.Initialize(_count, _startBeat);
-			_overlay.SetParams(_alpha, _speed);
+			_camera = camera;
+			_request = SpeedLinesService.AddRequest(camera);
+			_request.Alpha = _alpha;
+			_request.Count = _count;
+			_request.Speed = _speed;
+			_request.Reach = _reach;
+			_request.Color = _color;
 			_initialized = true;
 		}
 
 		private void RemoveOverlay()
 		{
-			if (_overlay != null)
-				Destroy(_overlay);
-			_overlay = null;
+			if (_camera != null && _request != null)
+				SpeedLinesService.RemoveRequest(_camera, _request);
+			_camera = null;
+			_request = null;
 		}
 	}
 
 	/// <summary>
-	/// Draws animated black speed-line triangles in OnPostRender.
-	/// Each triangle points inward from the screen edge toward the center,
-	/// flickering at an independently randomized phase to create a high-speed rush effect.
+	/// Draws animated radial speed-line streaks in OnPostRender.
+	/// Each streak has an independent phase, speed, and length so the effect remains visible
+	/// while continuously moving toward the screen edge.
 	/// Must be attached to a Camera's GameObject.
 	/// </summary>
 	private sealed class SpeedLinesOverlay : MonoBehaviour
 	{
-		// Distance from screen center to the triangle tip, in screen-height fractions.
-		private const float InnerRadius = 0.12f;
-
-		// Half-width of the triangle base at the screen boundary, in screen-height fractions.
-		private const float HalfWidth = 0.025f;
+		// Half-width of a streak at the outer end, in screen-height fractions.
+		private const float HalfWidth = 0.009f;
 
 		private static Material? _material;
 		private float _alpha;
 		private float _speed;
-		private float[]? _angles;
-		private float[]? _phases;
+		private float _reach;
+		private Color _color;
+		private int _count;
+		private float _seed;
 
 		/// <summary>
 		/// Generates the per-triangle angular positions and flicker phase offsets
 		/// using a deterministic seed so the layout is stable for each effect instance.
 		/// </summary>
-		public void Initialize(int count, float seed)
+		public void Initialize(int count, float seed, float reach, Color color)
 		{
-			var rng = new System.Random(Mathf.FloorToInt(seed * 100f) + count * 7919);
-			_angles = new float[count];
-			_phases = new float[count];
-			for (var i = 0; i < count; i++)
-			{
-				// Stratified random angles: distribute evenly around the screen with a small
-				// random jitter so the layout looks natural but not perfectly uniform.
-				var baseAngle = 2f * Mathf.PI * i / count;
-				var jitter = (float)(rng.NextDouble() - 0.5) * (2f * Mathf.PI / count) * 0.5f;
-				_angles[i] = baseAngle + jitter;
-				_phases[i] = (float)(rng.NextDouble() * 2.0 * System.Math.PI);
-			}
+			_count = count;
+			_seed = seed;
+			_reach = Mathf.Clamp01(reach);
+			_color = color;
 		}
 
 		/// <summary>
@@ -236,10 +243,16 @@ public sealed class SpeedLinesEffect : IVisualEffectDefinition
 			by = 0.5f + t * dy;
 		}
 
+		private static float Hash01(int x, int y)
+		{
+			var value = Mathf.Sin(x * 127.1f + y * 311.7f) * 43758.5453f;
+			return value - Mathf.Floor(value);
+		}
+
 		// Unity calls this on the camera's GameObject after it finishes rendering the scene.
 		private void OnPostRender()
 		{
-			if (_alpha <= 0f || _angles is null || _phases is null)
+			if (_alpha <= 0f || _count <= 0 || _reach <= 0f)
 				return;
 
 			var mat = GetMaterial();
@@ -258,18 +271,11 @@ public sealed class SpeedLinesEffect : IVisualEffectDefinition
 			GL.LoadOrtho();
 			GL.Begin(GL.TRIANGLES);
 
-			for (var i = 0; i < _angles.Length; i++)
+			var innerLimit = 1f - _reach;
+			for (var i = 0; i < _count; i++)
 			{
-				// Squaring the sine value produces sharper bright pulses separated by longer dark
-				// periods, reinforcing the high-speed feel. Each triangle uses a unique phase
-				// so they flash at different times rather than all at once.
-				var squaredSin = Mathf.Sin(time * _speed * (2f * Mathf.PI) + _phases[i]);
-				squaredSin *= squaredSin;
-				var flickerAlpha = squaredSin * _alpha;
-				if (flickerAlpha <= 0.005f)
-					continue;
-
-				var angle = _angles[i];
+				var angleNoise = Hash01(i, Mathf.FloorToInt(_seed * 100f));
+				var angle = 2f * Mathf.PI * (i + 0.5f + (angleNoise - 0.5f) * 0.7f) / _count;
 				var cosA = Mathf.Cos(angle);
 				var sinA = Mathf.Sin(angle);
 
@@ -278,28 +284,35 @@ public sealed class SpeedLinesEffect : IVisualEffectDefinition
 				var dirX = cosA * invAspect;
 				var dirY = sinA;
 
-				// Triangle tip: InnerRadius away from screen center along the visual direction.
-				var tipX = 0.5f + cosA * InnerRadius * invAspect;
-				var tipY = 0.5f + sinA * InnerRadius;
-
-				// Triangle base: centered on the screen boundary at this angle.
-				ScreenBoundary(dirX, dirY, out var bx, out var by);
+				// Find the screen-edge endpoint for this aspect-corrected visual ray.
+				ScreenBoundary(dirX, dirY, out var edgeX, out var edgeY);
 
 				// Perpendicular in GL ortho space (visual unit vector → GL representation).
 				var perpX = -sinA * invAspect;
 				var perpY = cosA;
 
-				// Offset the base center by ±HalfWidth along the perpendicular.
-				var base1X = bx + perpX * HalfWidth;
-				var base1Y = by + perpY * HalfWidth;
-				var base2X = bx - perpX * HalfWidth;
-				var base2Y = by - perpY * HalfWidth;
+				var phase = Hash01(i + 17, Mathf.FloorToInt(_seed * 100f));
+				var rate = Mathf.Lerp(0.75f, 1.35f, Hash01(i + 31, Mathf.FloorToInt(_seed * 47f)));
+				var progress = Mathf.Repeat(time * _speed * rate + phase, 1f);
+				var innerT = Mathf.Lerp(innerLimit, 1f, progress);
+				var outerT = Mathf.Min(1f, innerT + Mathf.Lerp(0.14f, 0.32f, Hash01(i + 53, Mathf.FloorToInt(_seed * 71f))));
+				if (outerT - innerT <= 0.001f)
+					continue;
 
-				var color = new Color(0f, 0f, 0f, flickerAlpha);
-				GL.Color(color);
-				GL.Vertex3(tipX, tipY, 0f);
-				GL.Vertex3(base1X, base1Y, 0f);
-				GL.Vertex3(base2X, base2Y, 0f);
+				var innerX = Mathf.Lerp(0.5f, edgeX, innerT);
+				var innerY = Mathf.Lerp(0.5f, edgeY, innerT);
+				var outerX = Mathf.Lerp(0.5f, edgeX, outerT);
+				var outerY = Mathf.Lerp(0.5f, edgeY, outerT);
+				var innerWidth = HalfWidth * 0.12f;
+				var outerWidth = HalfWidth * Mathf.Lerp(0.7f, 1.15f, outerT);
+				var pulse = 0.75f + 0.25f * Mathf.Sin(time * _speed * rate * (2f * Mathf.PI) + phase * 2f * Mathf.PI);
+				GL.Color(new Color(_color.r, _color.g, _color.b, _alpha * _color.a * pulse));
+				GL.Vertex3(innerX + perpX * innerWidth, innerY + perpY * innerWidth, 0f);
+				GL.Vertex3(outerX + perpX * outerWidth, outerY + perpY * outerWidth, 0f);
+				GL.Vertex3(outerX - perpX * outerWidth, outerY - perpY * outerWidth, 0f);
+				GL.Vertex3(innerX + perpX * innerWidth, innerY + perpY * innerWidth, 0f);
+				GL.Vertex3(outerX - perpX * outerWidth, outerY - perpY * outerWidth, 0f);
+				GL.Vertex3(innerX - perpX * innerWidth, innerY - perpY * innerWidth, 0f);
 			}
 
 			GL.End();
