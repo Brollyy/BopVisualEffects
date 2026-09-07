@@ -37,6 +37,7 @@ public static class BuildAssetBundles
 				{
 					"Assets/Shaders/BopVisualEffects_HSL.shader",
 					"Assets/Shaders/BopVisualEffects_Sepia.shader",
+					"Assets/Shaders/BopVisualEffects_SpeedLines.shader",
 				}
 			}
 		};

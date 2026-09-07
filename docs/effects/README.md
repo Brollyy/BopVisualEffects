@@ -210,6 +210,28 @@ Applies a warm vintage sepia-tone filter using a per-pixel shader (standard Adob
 
 https://github.com/user-attachments/assets/ff1025b3-1f4b-44c8-982f-6691fe861277
 
+## Speed Lines
+
+**DisplayName:** `Speed Lines`
+
+**Config Key:** `SpeedLines.Enabled`
+
+Draws an animated, noise-driven radial speed-line vignette. Thin colored streak segments are procedurally distributed in polar space and continuously scroll toward the screen edges. Fades in and out smoothly.
+
+**Properties**
+- `alpha`: Maximum opacity of the speed lines (0–1; default `0.8`).
+- `count`: Angular density of the procedural speed-line field (24–192; default `96`).
+- `speed`: Animation rate of the procedural noise in cycles per second (default `3.5`). Higher values produce faster-moving streaks.
+- `reach`: How far each speed line reaches toward the screen center as a normalized edge-to-center fraction (0–1; default `0.25`). `0` keeps the effect at the screen edge; `1` reaches the center. The calculation accounts for the screen aspect ratio.
+- `color`: Color and base opacity of the speed lines (default white).
+- `ease_in`: Fade speed lines in over the first 15% of the event (default `true`).
+- `ease_out`: Fade speed lines out over the last 15% of the event (default `true`).
+- `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
+
+**Preview**
+
+https://github.com/user-attachments/assets/edddc3f0-6b81-4b29-9956-da7df65da25b
+
 ## Vertical Flip
 
 **DisplayName:** `Vertical Flip`

@@ -31,6 +31,7 @@ to their GL-based rendering path.
 |---|---|
 | `Assets/Shaders/BopVisualEffects_HSL.shader` | Per-pixel hue rotation, saturation scaling and lightness offset. |
 | `Assets/Shaders/BopVisualEffects_Sepia.shader` | Per-pixel sepia tone using the standard Adobe/Kodak conversion matrix. |
+| `Assets/Shaders/BopVisualEffects_SpeedLines.shader` | Polar-noise radial speed-line post-processing effect based on Anime-Speed-Lines. |
 
 ## Build steps
 

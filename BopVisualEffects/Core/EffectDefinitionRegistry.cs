@@ -13,6 +13,7 @@ using BopVisualEffects.Effects.PixelGrid;
 using BopVisualEffects.Effects.Scanlines;
 using BopVisualEffects.Effects.ScreenNoise;
 using BopVisualEffects.Effects.Sepia;
+using BopVisualEffects.Effects.SpeedLines;
 using BopVisualEffects.Effects.VerticalFlip;
 using BopVisualEffects.Effects.Vignette;
 using BopVisualEffects.Effects.ZoomIn;
@@ -65,6 +66,7 @@ public sealed class EffectDefinitionRegistry
 		registry.Register(new ScanlinesEffect());
 		registry.Register(new ScreenNoiseEffect());
 		registry.Register(new SepiaEffect());
+		registry.Register(new SpeedLinesEffect());
 		registry.Register(new VerticalFlipEffect());
 		registry.Register(new VignetteEffect());
 		registry.Register(new ZoomInEffect());
