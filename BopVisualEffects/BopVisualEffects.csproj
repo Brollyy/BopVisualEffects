@@ -21,7 +21,7 @@
     </RestoreSources>
     <AssemblyName>BopVisualEffects</AssemblyName>
     <Product>Bop Visual Effects</Product>
-    <Version>0.1.0</Version>
+    <Version>0.2.0</Version>
     <RootNamespace>BopVisualEffects</RootNamespace>
     <Description>Bits &amp; Bops mod that adds additional visual effects for the in-game editor.</Description>
   </PropertyGroup>
