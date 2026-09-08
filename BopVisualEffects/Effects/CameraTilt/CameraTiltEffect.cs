@@ -32,7 +32,7 @@ public sealed class CameraTiltEffect : IVisualEffectDefinition
 			properties = new Dictionary<string, object>
 			{
 				["angle"] = 5.0f,
-				["persist_between_minigames"] = false
+				["persist_camera"] = false
 			}
 		};
 	}
@@ -43,7 +43,7 @@ public sealed class CameraTiltEffect : IVisualEffectDefinition
 		var log = ClassLogger.GetForClass<CameraTiltEffect>();
 		var durationBeats = Mathf.Max(0.01f, entity.length);
 		var angle = entity.GetFloat("angle");
-		var persist = entity.GetBool("persist_between_minigames", false);
+		var persist = entity.GetBool("persist_camera", false);
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
 
@@ -68,19 +68,19 @@ public sealed class CameraTiltEffect : IVisualEffectDefinition
 		private JukeboxScript? _jukebox;
 		private Transform? _targetTransform;
 		private Quaternion _initialLocalRotation;
-		private bool _persistBetweenMinigames;
+		private bool _persistCamera;
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float angle, bool persistBetweenMinigames)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float angle, bool persistCamera)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
 			_startBeat = startBeat;
 			_endBeat = endBeat;
 			_angle = angle;
-			_persistBetweenMinigames = persistBetweenMinigames;
+			_persistCamera = persistCamera;
 			InitializeTargetCamera();
 		}
 
@@ -108,7 +108,7 @@ public sealed class CameraTiltEffect : IVisualEffectDefinition
 					return;
 			}
 
-			if (_persistBetweenMinigames)
+			if (_persistCamera)
 				RebindCameraIfNeeded();
 
 			var currentBeat = _jukebox.CurrentBeat;

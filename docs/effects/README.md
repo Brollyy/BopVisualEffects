@@ -45,7 +45,7 @@ Applies a sustained full-screen color tint that fades in, holds, then fades out.
 
 **Properties**
 - `color`: Tint color (default `#ff000040` — red with slight opacity).
-- `persist_between_minigames`: Keep the effect attached to the active camera when the minigame changes (default `false`).
+- `persist_camera`: Keep the effect attached to the active camera when the minigame changes (default `false`).
 - `ease_in`: Fade the effect in at the event start (default `true`).
 - `ease_out`: Fade the effect out at the event end (default `true`).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
@@ -65,7 +65,7 @@ Draws a ground fog gradient overlay - opaque at the bottom of the screen, fading
 **Properties**
 - `color`: Fog color (default `#CCCCE599` - pale blue-gray).
 - `height`: Normalized screen height at which the fog fully fades to transparent (0–1; default `0.5`).
-- `persist_between_minigames`: Keep the effect attached to the active camera when the minigame changes (default `false`).
+- `persist_camera`: Keep the effect attached to the active camera when the minigame changes (default `false`).
 - `ease_in`: Fade the effect in at the event start (default `true`).
 - `ease_out`: Fade the effect out at the event end (default `true`).
 - `length` (event length in editor): How long the fog lasts, in beats. This event is resizable in the timeline.
@@ -102,7 +102,7 @@ Adjusts hue, saturation and lightness of the whole screen for colour grading usi
 - `saturation`: Saturation multiplier (0 = fully greyscale, 1 = unchanged, >1 = boosted; default `1.0`). Boost above 1 requires shader bundle.
 - `lightness`: Additive lightness offset (-0.5–0.5; default `0`). Positive values brighten, negative values darken.
 - `intensity`: Overall blend strength (0–1; default `1.0`).
-- `persist_between_minigames`: Keep the effect attached to the active camera when the minigame changes (default `false`).
+- `persist_camera`: Keep the effect attached to the active camera when the minigame changes (default `false`).
 - `ease_in`: Fade the effect in at the event start (default `true`).
 - `ease_out`: Fade the effect out at the event end (default `true`).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
@@ -121,7 +121,7 @@ Adds cinematic black bars at the top and bottom of the screen for a dramatic wid
 
 **Properties**
 - `size`: Height of each bar as a normalized screen fraction (0–0.49; default `0.1`).
-- `persist_between_minigames`: Keep the effect attached to the active camera when the minigame changes (default `false`).
+- `persist_camera`: Keep the effect attached to the active camera when the minigame changes (default `false`).
 - `ease_in`: Fade the effect in at the event start (default `true`).
 - `ease_out`: Fade the effect out at the event end (default `true`).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
@@ -140,7 +140,7 @@ Pixelates the screen by downsampling the camera's rendered output to a low-resol
 
 **Properties**
 - `pixel_size`: Size of each pixel block in screen pixels (2–64; default `4`). Larger values produce a more pronounced 8-bit look.
-- `persist_between_minigames`: Keep the effect attached to the active camera when the minigame changes (default `false`).
+- `persist_camera`: Keep the effect attached to the active camera when the minigame changes (default `false`).
 - `ease_in`: Fade the effect in at the event start (default `true`).
 - `ease_out`: Fade the effect out at the event end (default `true`).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
@@ -161,7 +161,7 @@ Draws horizontal CRT-style scan lines over the screen for a retro aesthetic. Can
 - `alpha`: Darkness of each scan line (0–1; default `0.35`).
 - `count`: Number of scan lines (default `60`, clamped 4–2000).
 - `scroll_speed`: Speed at which lines scroll upward, in cells per second (default `0` = static; negative = scroll downward).
-- `persist_between_minigames`: Keep the effect attached to the active camera when the minigame changes (default `false`).
+- `persist_camera`: Keep the effect attached to the active camera when the minigame changes (default `false`).
 - `ease_in`: Fade the effect in at the event start (default `true`).
 - `ease_out`: Fade the effect out at the event end (default `true`).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
@@ -182,7 +182,7 @@ Draws animated TV static noise specks over the screen for a glitchy atmosphere.
 - `alpha`: Maximum opacity of the noise specks (0–1; default `0.5`).
 - `count`: Number of noise specks drawn per frame (10–2000; default `400`).
 - `size`: Physical size of each speck in normalized screen coordinates (0.005–0.1; default `0.01`).
-- `persist_between_minigames`: Keep the effect attached to the active camera when the minigame changes (default `false`).
+- `persist_camera`: Keep the effect attached to the active camera when the minigame changes (default `false`).
 - `ease_in`: Fade the effect in at the event start (default `true`).
 - `ease_out`: Fade the effect out at the event end (default `true`).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
@@ -201,7 +201,7 @@ Applies a warm vintage sepia-tone filter using a per-pixel shader (standard Adob
 
 **Properties**
 - `intensity`: Strength of the sepia toning (0–1; default `0.8`).
-- `persist_between_minigames`: Keep the effect attached to the active camera when the minigame changes (default `false`).
+- `persist_camera`: Keep the effect attached to the active camera when the minigame changes (default `false`).
 - `ease_in`: Fade the effect in at the event start (default `true`).
 - `ease_out`: Fade the effect out at the event end (default `true`).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
@@ -224,7 +224,7 @@ Draws an animated, noise-driven radial speed-line vignette. Thin colored streak 
 - `speed`: Animation rate of the procedural noise in cycles per second (default `3.5`). Higher values produce faster-moving streaks.
 - `reach`: How far each speed line reaches toward the screen center as a normalized edge-to-center fraction (0–1; default `0.25`). `0` keeps the effect at the screen edge; `1` reaches the center. The calculation accounts for the screen aspect ratio.
 - `color`: Color and base opacity of the speed lines (default white).
-- `persist_between_minigames`: Keep the effect attached to the active camera when the minigame changes (default `false`).
+- `persist_camera`: Keep the effect attached to the active camera when the minigame changes (default `false`).
 - `ease_in`: Fade speed lines in over the first 15% of the event (default `true`).
 - `ease_out`: Fade speed lines out over the last 15% of the event (default `true`).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
@@ -259,7 +259,7 @@ Darkens the screen edges with a smooth radial/elliptical gradient using a 32-seg
 **Properties**
 - `alpha`: Darkness of the edge (0–1; default `0.7`).
 - `size`: How far the darkening extends inward as a fraction of screen half-height (0–0.5; default `0.1`).
-- `persist_between_minigames`: Keep the effect attached to the active camera when the minigame changes (default `false`).
+- `persist_camera`: Keep the effect attached to the active camera when the minigame changes (default `false`).
 - `ease_in`: Fade the effect in at the event start (default `true`).
 - `ease_out`: Fade the effect out at the event end (default `true`).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
@@ -278,7 +278,7 @@ Eases the camera smoothly into a zoomed-in view, holds at the target level, then
 
 **Properties**
 - `intensity`: How far to zoom in, as a fraction of the camera's base size (e.g. `0.2` = 20% closer). Clamped to `[0, 0.99]`.
-- `persist_between_minigames`: Keep the effect attached to the active camera when the minigame changes (default `false`).
+- `persist_camera`: Keep the effect attached to the active camera when the minigame changes (default `false`).
 - `ease_in`: Fade the effect in at the event start (default `true`).
 - `ease_out`: Fade the effect out at the event end (default `true`).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.
@@ -297,7 +297,7 @@ Eases the camera smoothly out to a wider view, holds, then eases back in. Compos
 
 **Properties**
 - `intensity`: How far to zoom out, as a fraction of the camera's base size (e.g. `0.2` = 20% further out).
-- `persist_between_minigames`: Keep the effect attached to the active camera when the minigame changes (default `false`).
+- `persist_camera`: Keep the effect attached to the active camera when the minigame changes (default `false`).
 - `ease_in`: Fade the effect in at the event start (default `true`).
 - `ease_out`: Fade the effect out at the event end (default `true`).
 - `length` (event length in editor): How long the effect lasts, in beats. This event is resizable in the timeline.

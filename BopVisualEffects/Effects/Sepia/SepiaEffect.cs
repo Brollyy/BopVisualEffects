@@ -35,7 +35,7 @@ public sealed class SepiaEffect : IVisualEffectDefinition
 			properties = new Dictionary<string, object>
 			{
 				["intensity"] = 0.8f,
-				["persist_between_minigames"] = false,
+				["persist_camera"] = false,
 				["ease_in"] = true,
 				["ease_out"] = true
 			}
@@ -48,7 +48,7 @@ public sealed class SepiaEffect : IVisualEffectDefinition
 		var log = ClassLogger.GetForClass<SepiaEffect>();
 		var durationBeats = Mathf.Max(0.01f, entity.length);
 		var intensity = entity.GetFloat("intensity");
-		var persist = entity.GetBool("persist_between_minigames", false);
+		var persist = entity.GetBool("persist_camera", false);
 		var easeIn = entity.GetBool("ease_in", true);
 		var easeOut = entity.GetBool("ease_out", true);
 		var startBeat = entity.beat;
@@ -75,21 +75,21 @@ public sealed class SepiaEffect : IVisualEffectDefinition
 		private JukeboxScript? _jukebox;
 		private Camera? _camera;
 		private SepiaRequest? _request;
-		private bool _persistBetweenMinigames;
+		private bool _persistCamera;
 		private bool _easeIn;
 		private bool _easeOut;
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float intensity, bool persistBetweenMinigames, bool easeIn, bool easeOut)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float intensity, bool persistCamera, bool easeIn, bool easeOut)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
 			_startBeat = startBeat;
 			_endBeat = endBeat;
 			_maxIntensity = Mathf.Clamp01(intensity);
-			_persistBetweenMinigames = persistBetweenMinigames;
+			_persistCamera = persistCamera;
 			_easeIn = easeIn;
 			_easeOut = easeOut;
 			InitializeRequest();
@@ -119,7 +119,7 @@ public sealed class SepiaEffect : IVisualEffectDefinition
 					return;
 			}
 
-			if (_persistBetweenMinigames)
+			if (_persistCamera)
 				RebindRequestIfNeeded();
 
 			var currentBeat = _jukebox.CurrentBeat;

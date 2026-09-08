@@ -33,7 +33,7 @@ public sealed class LetterboxEffect : IVisualEffectDefinition
 			properties = new Dictionary<string, object>
 			{
 				["size"] = 0.1f,
-				["persist_between_minigames"] = false,
+				["persist_camera"] = false,
 				["ease_in"] = true,
 				["ease_out"] = true
 			}
@@ -46,7 +46,7 @@ public sealed class LetterboxEffect : IVisualEffectDefinition
 		var log = ClassLogger.GetForClass<LetterboxEffect>();
 		var durationBeats = Mathf.Max(0.01f, entity.length);
 		var size = entity.GetFloat("size");
-		var persist = entity.GetBool("persist_between_minigames", false);
+		var persist = entity.GetBool("persist_camera", false);
 		var easeIn = entity.GetBool("ease_in", true);
 		var easeOut = entity.GetBool("ease_out", true);
 		var startBeat = entity.beat;
@@ -73,21 +73,21 @@ public sealed class LetterboxEffect : IVisualEffectDefinition
 		private JukeboxScript? _jukebox;
 		private LetterboxOverlay? _overlay;
 		private Camera? _camera;
-		private bool _persistBetweenMinigames;
+		private bool _persistCamera;
 		private bool _easeIn;
 		private bool _easeOut;
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float size, bool persistBetweenMinigames, bool easeIn, bool easeOut)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float size, bool persistCamera, bool easeIn, bool easeOut)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
 			_startBeat = startBeat;
 			_endBeat = endBeat;
 			_size = Mathf.Clamp(size, 0f, 0.49f);
-			_persistBetweenMinigames = persistBetweenMinigames;
+			_persistCamera = persistCamera;
 			_easeIn = easeIn;
 			_easeOut = easeOut;
 			InitializeOverlay();
@@ -117,7 +117,7 @@ public sealed class LetterboxEffect : IVisualEffectDefinition
 					return;
 			}
 
-			if (_persistBetweenMinigames)
+			if (_persistCamera)
 				RebindOverlayIfNeeded();
 
 			var currentBeat = _jukebox.CurrentBeat;

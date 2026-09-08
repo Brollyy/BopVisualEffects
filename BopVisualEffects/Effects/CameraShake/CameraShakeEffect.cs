@@ -33,7 +33,7 @@ public sealed class CameraShakeEffect : IVisualEffectDefinition
 			{
 				["amplitude"] = 0.1f,
 				["frequency"] = 18.0f,
-				["persist_between_minigames"] = false
+				["persist_camera"] = false
 			}
 		};
 	}
@@ -45,7 +45,7 @@ public sealed class CameraShakeEffect : IVisualEffectDefinition
 		var durationBeats = Mathf.Max(0.01f, entity.length);
 		var amplitude = entity.GetFloat("amplitude");
 		var frequency = entity.GetFloat("frequency");
-		var persist = entity.GetBool("persist_between_minigames", false);
+		var persist = entity.GetBool("persist_camera", false);
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
 
@@ -71,12 +71,12 @@ public sealed class CameraShakeEffect : IVisualEffectDefinition
 		private JukeboxScript? _jukebox;
 		private Transform? _targetTransform;
 		private Vector3 _initialLocalPosition;
-		private bool _persistBetweenMinigames;
+		private bool _persistCamera;
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float amplitude, float frequency, bool persistBetweenMinigames)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float amplitude, float frequency, bool persistCamera)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
@@ -84,7 +84,7 @@ public sealed class CameraShakeEffect : IVisualEffectDefinition
 			_endBeat = endBeat;
 			_amplitude = Mathf.Max(0f, amplitude);
 			_frequency = Mathf.Max(0.1f, frequency);
-			_persistBetweenMinigames = persistBetweenMinigames;
+			_persistCamera = persistCamera;
 			InitializeTargetCamera();
 		}
 
@@ -112,7 +112,7 @@ public sealed class CameraShakeEffect : IVisualEffectDefinition
 					return;
 			}
 
-			if (_persistBetweenMinigames)
+			if (_persistCamera)
 				RebindCameraIfNeeded();
 
 			var currentBeat = _jukebox.CurrentBeat;

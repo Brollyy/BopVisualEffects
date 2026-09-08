@@ -35,7 +35,7 @@ public sealed class ScreenNoiseEffect : IVisualEffectDefinition
 				["alpha"] = 0.5f,
 				["count"] = 400.0f,
 				["size"] = 0.01f,
-				["persist_between_minigames"] = false,
+				["persist_camera"] = false,
 				["ease_in"] = true,
 				["ease_out"] = true
 			}
@@ -50,7 +50,7 @@ public sealed class ScreenNoiseEffect : IVisualEffectDefinition
 		var alpha = entity.GetFloat("alpha");
 		var count = entity.GetFloat("count");
 		var size = entity.GetFloat("size");
-		var persist = entity.GetBool("persist_between_minigames", false);
+		var persist = entity.GetBool("persist_camera", false);
 		var easeIn = entity.GetBool("ease_in", true);
 		var easeOut = entity.GetBool("ease_out", true);
 		var startBeat = entity.beat;
@@ -79,14 +79,14 @@ public sealed class ScreenNoiseEffect : IVisualEffectDefinition
 		private JukeboxScript? _jukebox;
 		private ScreenNoiseOverlay? _overlay;
 		private Camera? _camera;
-		private bool _persistBetweenMinigames;
+		private bool _persistCamera;
 		private bool _easeIn;
 		private bool _easeOut;
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float alpha, float count, float size, bool persistBetweenMinigames, bool easeIn, bool easeOut)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float alpha, float count, float size, bool persistCamera, bool easeIn, bool easeOut)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
@@ -95,7 +95,7 @@ public sealed class ScreenNoiseEffect : IVisualEffectDefinition
 			_alpha = Mathf.Clamp01(alpha);
 			_count = Mathf.Clamp(Mathf.RoundToInt(count), 10, 2000);
 			_size = Mathf.Clamp(size, 0.005f, 0.1f);
-			_persistBetweenMinigames = persistBetweenMinigames;
+			_persistCamera = persistCamera;
 			_easeIn = easeIn;
 			_easeOut = easeOut;
 			InitializeOverlay();
@@ -125,7 +125,7 @@ public sealed class ScreenNoiseEffect : IVisualEffectDefinition
 					return;
 			}
 
-			if (_persistBetweenMinigames)
+			if (_persistCamera)
 				RebindOverlayIfNeeded();
 
 			var currentBeat = _jukebox.CurrentBeat;

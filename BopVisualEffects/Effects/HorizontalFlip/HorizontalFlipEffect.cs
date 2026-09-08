@@ -32,7 +32,7 @@ public sealed class HorizontalFlipEffect : IVisualEffectDefinition
 			resizable = true,
 			properties = new Dictionary<string, object>
 			{
-				["persist_between_minigames"] = false
+				["persist_camera"] = false
 			}
 		};
 	}
@@ -44,7 +44,7 @@ public sealed class HorizontalFlipEffect : IVisualEffectDefinition
 		var durationBeats = Mathf.Max(0.01f, entity.length);
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
-		var persist = entity.GetBool("persist_between_minigames", false);
+		var persist = entity.GetBool("persist_camera", false);
 
 		loader.scheduler.Schedule(startBeat, (System.Action?)SpawnAction);
 		log.Debug($"Scheduled '{DisplayName}' from beat {startBeat:0.###} to {endBeat:0.###}.");
@@ -64,17 +64,17 @@ public sealed class HorizontalFlipEffect : IVisualEffectDefinition
 		private MixtapeLoaderCustom? _loader;
 		private JukeboxScript? _jukebox;
 		private Camera? _camera;
-		private bool _persistBetweenMinigames;
+		private bool _persistCamera;
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float endBeat, bool persistBetweenMinigames)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float endBeat, bool persistCamera)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
 			_endBeat = endBeat;
-			_persistBetweenMinigames = persistBetweenMinigames;
+			_persistCamera = persistCamera;
 			InitializeFlip();
 		}
 
@@ -102,7 +102,7 @@ public sealed class HorizontalFlipEffect : IVisualEffectDefinition
 					return;
 			}
 
-			if (_persistBetweenMinigames)
+			if (_persistCamera)
 				RebindCameraIfNeeded();
 
 			var currentBeat = _jukebox.CurrentBeat;

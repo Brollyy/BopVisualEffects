@@ -38,7 +38,7 @@ public sealed class HslEffect : IVisualEffectDefinition
 				["saturation"] = 1.0f,
 				["lightness"] = 0.0f,
 				["intensity"] = 1.0f,
-				["persist_between_minigames"] = false,
+				["persist_camera"] = false,
 				["ease_in"] = true,
 				["ease_out"] = true
 			}
@@ -54,7 +54,7 @@ public sealed class HslEffect : IVisualEffectDefinition
 		var saturation = entity.GetFloat("saturation");
 		var lightness = entity.GetFloat("lightness");
 		var intensity = entity.GetFloat("intensity");
-		var persist = entity.GetBool("persist_between_minigames", false);
+		var persist = entity.GetBool("persist_camera", false);
 		var easeIn = entity.GetBool("ease_in", true);
 		var easeOut = entity.GetBool("ease_out", true);
 		var startBeat = entity.beat;
@@ -84,7 +84,7 @@ public sealed class HslEffect : IVisualEffectDefinition
 		private JukeboxScript? _jukebox;
 		private Camera? _camera;
 		private HslRequest? _request;
-		private bool _persistBetweenMinigames;
+		private bool _persistCamera;
 		private bool _easeIn;
 		private bool _easeOut;
 
@@ -92,7 +92,7 @@ public sealed class HslEffect : IVisualEffectDefinition
 		/// Initializes this runner with effect parameters.
 		/// </summary>
 		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat,
-			float hueShift, float saturation, float lightness, float intensity, bool persistBetweenMinigames, bool easeIn, bool easeOut)
+			float hueShift, float saturation, float lightness, float intensity, bool persistCamera, bool easeIn, bool easeOut)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
@@ -102,7 +102,7 @@ public sealed class HslEffect : IVisualEffectDefinition
 			_saturation = Mathf.Max(0f, saturation);
 			_lightness = Mathf.Clamp(lightness, -0.5f, 0.5f);
 			_maxIntensity = Mathf.Clamp01(intensity);
-			_persistBetweenMinigames = persistBetweenMinigames;
+			_persistCamera = persistCamera;
 			_easeIn = easeIn;
 			_easeOut = easeOut;
 			InitializeRequest();
@@ -132,7 +132,7 @@ public sealed class HslEffect : IVisualEffectDefinition
 					return;
 			}
 
-			if (_persistBetweenMinigames)
+			if (_persistCamera)
 				RebindRequestIfNeeded();
 
 			var currentBeat = _jukebox.CurrentBeat;

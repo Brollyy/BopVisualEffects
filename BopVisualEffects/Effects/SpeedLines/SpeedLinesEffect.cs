@@ -39,7 +39,7 @@ public sealed class SpeedLinesEffect : IVisualEffectDefinition
 				["speed"] = 3.5f,
 				["reach"] = DefaultReach,
 				["color"] = new MixtapeEventTemplates.ColorField(Color.white),
-				["persist_between_minigames"] = false,
+				["persist_camera"] = false,
 				["ease_in"] = true,
 				["ease_out"] = true
 			}
@@ -56,7 +56,7 @@ public sealed class SpeedLinesEffect : IVisualEffectDefinition
 		var speed = entity.GetFloat("speed");
 		var reach = entity.GetFloat("reach");
 		var color = entity.GetColor("color");
-		var persist = entity.GetBool("persist_between_minigames", false);
+		var persist = entity.GetBool("persist_camera", false);
 		var easeIn = entity.GetBool("ease_in", true);
 		var easeOut = entity.GetBool("ease_out", true);
 		var startBeat = entity.beat;
@@ -68,7 +68,7 @@ public sealed class SpeedLinesEffect : IVisualEffectDefinition
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<SpeedLinesRunner>(runner =>
-				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, alpha, count, speed, reach, color, persist, easeIn, easeOut));
+			runner.Initialize(loader, loader.jukebox, startBeat, endBeat, alpha, count, speed, reach, color, persist, easeIn, easeOut));
 		}
 	}
 
@@ -86,14 +86,14 @@ public sealed class SpeedLinesEffect : IVisualEffectDefinition
 		private JukeboxScript? _jukebox;
 		private Camera? _camera;
 		private SpeedLinesRequest? _request;
-		private bool _persistBetweenMinigames;
+		private bool _persistCamera;
 		private bool _easeIn;
 		private bool _easeOut;
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float alpha, float count, float speed, float reach, Color color, bool persistBetweenMinigames, bool easeIn, bool easeOut)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float alpha, float count, float speed, float reach, Color color, bool persistCamera, bool easeIn, bool easeOut)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
@@ -104,7 +104,7 @@ public sealed class SpeedLinesEffect : IVisualEffectDefinition
 			_speed = Mathf.Max(0.1f, speed);
 			_reach = Mathf.Clamp01(reach);
 			_color = new Color(Mathf.Clamp01(color.r), Mathf.Clamp01(color.g), Mathf.Clamp01(color.b), Mathf.Clamp01(color.a));
-			_persistBetweenMinigames = persistBetweenMinigames;
+			_persistCamera = persistCamera;
 			_easeIn = easeIn;
 			_easeOut = easeOut;
 			InitializeOverlay();
@@ -134,7 +134,7 @@ public sealed class SpeedLinesEffect : IVisualEffectDefinition
 					return;
 			}
 
-			if (_persistBetweenMinigames)
+			if (_persistCamera)
 				RebindOverlayIfNeeded();
 
 			var currentBeat = _jukebox.CurrentBeat;
@@ -203,6 +203,7 @@ public sealed class SpeedLinesEffect : IVisualEffectDefinition
 			_request.Reach = _reach;
 			_request.Color = _color;
 		}
+
 	}
 
 	/// <summary>

@@ -34,7 +34,7 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 			properties = new Dictionary<string, object>
 			{
 				["pixel_size"] = 4.0f,
-				["persist_between_minigames"] = false,
+				["persist_camera"] = false,
 				["ease_in"] = true,
 				["ease_out"] = true
 			}
@@ -47,7 +47,7 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 		var log = ClassLogger.GetForClass<PixelGridEffect>();
 		var durationBeats = Mathf.Max(0.01f, entity.length);
 		var pixelSize = entity.GetFloat("pixel_size");
-		var persist = entity.GetBool("persist_between_minigames", false);
+		var persist = entity.GetBool("persist_camera", false);
 		var easeIn = entity.GetBool("ease_in", true);
 		var easeOut = entity.GetBool("ease_out", true);
 		var startBeat = entity.beat;
@@ -74,21 +74,21 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 		private JukeboxScript? _jukebox;
 		private PixelGridOverlay? _overlay;
 		private Camera? _camera;
-		private bool _persistBetweenMinigames;
+		private bool _persistCamera;
 		private bool _easeIn;
 		private bool _easeOut;
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float pixelSize, bool persistBetweenMinigames, bool easeIn, bool easeOut)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float pixelSize, bool persistCamera, bool easeIn, bool easeOut)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
 			_startBeat = startBeat;
 			_endBeat = endBeat;
 			_pixelSize = Mathf.Clamp(Mathf.RoundToInt(pixelSize), 2, 64);
-			_persistBetweenMinigames = persistBetweenMinigames;
+			_persistCamera = persistCamera;
 			_easeIn = easeIn;
 			_easeOut = easeOut;
 			InitializeOverlay();
@@ -118,7 +118,7 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 					return;
 			}
 
-			if (_persistBetweenMinigames)
+			if (_persistCamera)
 				RebindOverlayIfNeeded();
 
 			var currentBeat = _jukebox.CurrentBeat;
