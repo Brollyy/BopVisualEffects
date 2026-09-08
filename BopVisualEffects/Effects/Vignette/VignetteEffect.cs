@@ -34,6 +34,7 @@ public sealed class VignetteEffect : IVisualEffectDefinition
 			{
 				["alpha"] = 0.7f,
 				["size"] = 0.1f,
+				["persist_camera"] = false,
 				["ease_in"] = true,
 				["ease_out"] = true
 			}
@@ -47,6 +48,7 @@ public sealed class VignetteEffect : IVisualEffectDefinition
 		var durationBeats = Mathf.Max(0.01f, entity.length);
 		var alpha = entity.GetFloat("alpha");
 		var size = entity.GetFloat("size");
+		var persist = entity.GetBool("persist_camera", false);
 		var easeIn = entity.GetBool("ease_in", true);
 		var easeOut = entity.GetBool("ease_out", true);
 		var startBeat = entity.beat;
@@ -59,7 +61,7 @@ public sealed class VignetteEffect : IVisualEffectDefinition
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<VignetteRunner>(runner =>
-				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, alpha, size, easeIn, easeOut));
+				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, alpha, size, persist, easeIn, easeOut));
 		}
 	}
 
@@ -73,13 +75,15 @@ public sealed class VignetteEffect : IVisualEffectDefinition
 		private MixtapeLoaderCustom? _loader;
 		private JukeboxScript? _jukebox;
 		private VignetteOverlay? _overlay;
+		private Camera? _camera;
+		private bool _persistCamera;
 		private bool _easeIn;
 		private bool _easeOut;
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float alpha, float size, bool easeIn, bool easeOut)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float alpha, float size, bool persistCamera, bool easeIn, bool easeOut)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
@@ -87,6 +91,7 @@ public sealed class VignetteEffect : IVisualEffectDefinition
 			_endBeat = endBeat;
 			_alpha = Mathf.Clamp01(alpha);
 			_size = Mathf.Clamp(size, 0f, 0.5f);
+			_persistCamera = persistCamera;
 			_easeIn = easeIn;
 			_easeOut = easeOut;
 			InitializeOverlay();
@@ -116,6 +121,9 @@ public sealed class VignetteEffect : IVisualEffectDefinition
 					return;
 			}
 
+			if (_persistCamera)
+				RebindOverlayIfNeeded();
+
 			var currentBeat = _jukebox.CurrentBeat;
 			if (currentBeat >= _endBeat)
 			{
@@ -143,6 +151,7 @@ public sealed class VignetteEffect : IVisualEffectDefinition
 				return;
 
 			_overlay = camera.gameObject.AddComponent<VignetteOverlay>();
+			_camera = camera;
 			_overlay.SetParams(_alpha, _size);
 			_initialized = true;
 		}
@@ -155,6 +164,19 @@ public sealed class VignetteEffect : IVisualEffectDefinition
 			}
 
 			_overlay = null;
+			_camera = null;
+		}
+
+		private void RebindOverlayIfNeeded()
+		{
+			Camera? camera = EffectRuntimeController.ResolveEffectCamera(_loader);
+			if (camera is null || _camera == camera)
+				return;
+
+			RemoveOverlay();
+			_overlay = camera.gameObject.AddComponent<VignetteOverlay>();
+			_camera = camera;
+			_overlay.SetParams(_alpha, _size);
 		}
 	}
 

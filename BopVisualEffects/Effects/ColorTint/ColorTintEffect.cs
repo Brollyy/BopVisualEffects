@@ -33,6 +33,7 @@ public sealed class ColorTintEffect : IVisualEffectDefinition
 			properties = new Dictionary<string, object>
 			{
 				["color"] = new MixtapeEventTemplates.ColorField(new Color(1.0f, 0.0f, 0.0f, 0.25f)),
+				["persist_camera"] = false,
 				["ease_in"] = true,
 				["ease_out"] = true
 			}
@@ -45,6 +46,7 @@ public sealed class ColorTintEffect : IVisualEffectDefinition
 		var log = ClassLogger.GetForClass<ColorTintEffect>();
 		var durationBeats = Mathf.Max(0.01f, entity.length);
 		var color = entity.GetColor("color");
+		var persist = entity.GetBool("persist_camera", false);
 		var easeIn = entity.GetBool("ease_in", true);
 		var easeOut = entity.GetBool("ease_out", true);
 		var startBeat = entity.beat;
@@ -57,7 +59,7 @@ public sealed class ColorTintEffect : IVisualEffectDefinition
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<ColorTintRunner>(runner =>
-				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, color, easeIn, easeOut));
+				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, color, persist, easeIn, easeOut));
 		}
 	}
 
@@ -70,19 +72,22 @@ public sealed class ColorTintEffect : IVisualEffectDefinition
 		private MixtapeLoaderCustom? _loader;
 		private JukeboxScript? _jukebox;
 		private ColorTintOverlay? _overlay;
+		private Camera? _camera;
+		private bool _persistCamera;
 		private bool _easeIn;
 		private bool _easeOut;
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, Color color, bool easeIn, bool easeOut)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, Color color, bool persistCamera, bool easeIn, bool easeOut)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
 			_startBeat = startBeat;
 			_endBeat = endBeat;
 			_color = new Color(Mathf.Clamp01(color.r), Mathf.Clamp01(color.g), Mathf.Clamp01(color.b), Mathf.Clamp01(color.a));
+			_persistCamera = persistCamera;
 			_easeIn = easeIn;
 			_easeOut = easeOut;
 			InitializeOverlay();
@@ -112,6 +117,9 @@ public sealed class ColorTintEffect : IVisualEffectDefinition
 					return;
 			}
 
+			if (_persistCamera)
+				RebindOverlayIfNeeded();
+
 			var currentBeat = _jukebox.CurrentBeat;
 			if (currentBeat >= _endBeat)
 			{
@@ -139,6 +147,7 @@ public sealed class ColorTintEffect : IVisualEffectDefinition
 				return;
 
 			_overlay = camera.gameObject.AddComponent<ColorTintOverlay>();
+			_camera = camera;
 			_overlay.SetColor(_color);
 			_initialized = true;
 		}
@@ -151,6 +160,19 @@ public sealed class ColorTintEffect : IVisualEffectDefinition
 			}
 
 			_overlay = null;
+			_camera = null;
+		}
+
+		private void RebindOverlayIfNeeded()
+		{
+			Camera? camera = EffectRuntimeController.ResolveEffectCamera(_loader);
+			if (camera is null || _camera == camera)
+				return;
+
+			RemoveOverlay();
+			_overlay = camera.gameObject.AddComponent<ColorTintOverlay>();
+			_camera = camera;
+			_overlay.SetColor(_color);
 		}
 	}
 

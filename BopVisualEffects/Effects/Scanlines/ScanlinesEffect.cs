@@ -35,6 +35,7 @@ public sealed class ScanlinesEffect : IVisualEffectDefinition
 				["alpha"] = 0.35f,
 				["count"] = 60.0f,
 				["scroll_speed"] = 0.0f,
+				["persist_camera"] = false,
 				["ease_in"] = true,
 				["ease_out"] = true
 			}
@@ -49,6 +50,7 @@ public sealed class ScanlinesEffect : IVisualEffectDefinition
 		var alpha = entity.GetFloat("alpha");
 		var count = entity.GetFloat("count");
 		var scrollSpeed = entity.GetFloat("scroll_speed");
+		var persist = entity.GetBool("persist_camera", false);
 		var easeIn = entity.GetBool("ease_in", true);
 		var easeOut = entity.GetBool("ease_out", true);
 		var startBeat = entity.beat;
@@ -61,7 +63,7 @@ public sealed class ScanlinesEffect : IVisualEffectDefinition
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<ScanlinesRunner>(runner =>
-				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, alpha, count, scrollSpeed, easeIn, easeOut));
+				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, alpha, count, scrollSpeed, persist, easeIn, easeOut));
 		}
 	}
 
@@ -76,13 +78,15 @@ public sealed class ScanlinesEffect : IVisualEffectDefinition
 		private MixtapeLoaderCustom? _loader;
 		private JukeboxScript? _jukebox;
 		private ScanlinesOverlay? _overlay;
+		private Camera? _camera;
+		private bool _persistCamera;
 		private bool _easeIn;
 		private bool _easeOut;
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float alpha, float count, float scrollSpeed, bool easeIn, bool easeOut)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float alpha, float count, float scrollSpeed, bool persistCamera, bool easeIn, bool easeOut)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
@@ -91,6 +95,7 @@ public sealed class ScanlinesEffect : IVisualEffectDefinition
 			_alpha = Mathf.Clamp01(alpha);
 			_count = Mathf.Clamp(Mathf.RoundToInt(count), 4, 2000);
 			_scrollSpeed = scrollSpeed;
+			_persistCamera = persistCamera;
 			_easeIn = easeIn;
 			_easeOut = easeOut;
 			InitializeOverlay();
@@ -120,6 +125,9 @@ public sealed class ScanlinesEffect : IVisualEffectDefinition
 					return;
 			}
 
+			if (_persistCamera)
+				RebindOverlayIfNeeded();
+
 			var currentBeat = _jukebox.CurrentBeat;
 			if (currentBeat >= _endBeat)
 			{
@@ -147,6 +155,7 @@ public sealed class ScanlinesEffect : IVisualEffectDefinition
 				return;
 
 			_overlay = camera.gameObject.AddComponent<ScanlinesOverlay>();
+			_camera = camera;
 			_overlay.SetParams(_alpha, _count, _scrollSpeed);
 			_initialized = true;
 		}
@@ -159,6 +168,19 @@ public sealed class ScanlinesEffect : IVisualEffectDefinition
 			}
 
 			_overlay = null;
+			_camera = null;
+		}
+
+		private void RebindOverlayIfNeeded()
+		{
+			Camera? camera = EffectRuntimeController.ResolveEffectCamera(_loader);
+			if (camera is null || _camera == camera)
+				return;
+
+			RemoveOverlay();
+			_overlay = camera.gameObject.AddComponent<ScanlinesOverlay>();
+			_camera = camera;
+			_overlay.SetParams(_alpha, _count, _scrollSpeed);
 		}
 	}
 

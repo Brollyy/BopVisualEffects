@@ -34,6 +34,7 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 			properties = new Dictionary<string, object>
 			{
 				["pixel_size"] = 4.0f,
+				["persist_camera"] = false,
 				["ease_in"] = true,
 				["ease_out"] = true
 			}
@@ -46,6 +47,7 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 		var log = ClassLogger.GetForClass<PixelGridEffect>();
 		var durationBeats = Mathf.Max(0.01f, entity.length);
 		var pixelSize = entity.GetFloat("pixel_size");
+		var persist = entity.GetBool("persist_camera", false);
 		var easeIn = entity.GetBool("ease_in", true);
 		var easeOut = entity.GetBool("ease_out", true);
 		var startBeat = entity.beat;
@@ -58,7 +60,7 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<PixelGridRunner>(runner =>
-				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, pixelSize, easeIn, easeOut));
+				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, pixelSize, persist, easeIn, easeOut));
 		}
 	}
 
@@ -71,19 +73,22 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 		private MixtapeLoaderCustom? _loader;
 		private JukeboxScript? _jukebox;
 		private PixelGridOverlay? _overlay;
+		private Camera? _camera;
+		private bool _persistCamera;
 		private bool _easeIn;
 		private bool _easeOut;
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float pixelSize, bool easeIn, bool easeOut)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float pixelSize, bool persistCamera, bool easeIn, bool easeOut)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
 			_startBeat = startBeat;
 			_endBeat = endBeat;
 			_pixelSize = Mathf.Clamp(Mathf.RoundToInt(pixelSize), 2, 64);
+			_persistCamera = persistCamera;
 			_easeIn = easeIn;
 			_easeOut = easeOut;
 			InitializeOverlay();
@@ -113,6 +118,9 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 					return;
 			}
 
+			if (_persistCamera)
+				RebindOverlayIfNeeded();
+
 			var currentBeat = _jukebox.CurrentBeat;
 			if (currentBeat >= _endBeat)
 			{
@@ -124,8 +132,8 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 			// block_size=1 means no pixelation; ramping from 1 → _pixelSize gives a "zooming into pixels" look.
 			var progress = Mathf.InverseLerp(_startBeat, _endBeat, currentBeat);
 			var envelope = EffectEnvelope.Evaluate(progress, _easeIn, _easeOut, 0.15f, 0.85f);
-
 			var currentBlockSize = Mathf.Max(1, Mathf.RoundToInt(Mathf.Lerp(1f, _pixelSize, envelope)));
+
 			if (_overlay != null)
 				_overlay.SetBlockSize(currentBlockSize);
 		}
@@ -142,6 +150,7 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 				return;
 
 			_overlay = camera.gameObject.AddComponent<PixelGridOverlay>();
+			_camera = camera;
 			_overlay.SetBlockSize(_pixelSize);
 			_initialized = true;
 		}
@@ -154,6 +163,18 @@ public sealed class PixelGridEffect : IVisualEffectDefinition
 			}
 
 			_overlay = null;
+			_camera = null;
+		}
+
+		private void RebindOverlayIfNeeded()
+		{
+			Camera? camera = EffectRuntimeController.ResolveEffectCamera(_loader);
+			if (camera is null || _camera == camera)
+				return;
+
+			RemoveOverlay();
+			_overlay = camera.gameObject.AddComponent<PixelGridOverlay>();
+			_camera = camera;
 		}
 	}
 

@@ -34,6 +34,7 @@ public sealed class FogEffect : IVisualEffectDefinition
 			{
 				["color"] = new MixtapeEventTemplates.ColorField(new Color(0.8f, 0.8f, 0.9f, 0.6f)),
 				["height"] = 0.5f,
+				["persist_camera"] = false,
 				["ease_in"] = true,
 				["ease_out"] = true
 			}
@@ -47,6 +48,7 @@ public sealed class FogEffect : IVisualEffectDefinition
 		var durationBeats = Mathf.Max(0.01f, entity.length);
 		var color = entity.GetColor("color");
 		var height = entity.GetFloat("height");
+		var persist = entity.GetBool("persist_camera", false);
 		var easeIn = entity.GetBool("ease_in", true);
 		var easeOut = entity.GetBool("ease_out", true);
 		var startBeat = entity.beat;
@@ -59,7 +61,7 @@ public sealed class FogEffect : IVisualEffectDefinition
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<FogRunner>(runner =>
-				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, color, height, easeIn, easeOut));
+				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, color, height, persist, easeIn, easeOut));
 		}
 	}
 
@@ -73,13 +75,15 @@ public sealed class FogEffect : IVisualEffectDefinition
 		private MixtapeLoaderCustom? _loader;
 		private JukeboxScript? _jukebox;
 		private FogOverlay? _overlay;
+		private Camera? _camera;
+		private bool _persistCamera;
 		private bool _easeIn;
 		private bool _easeOut;
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, Color color, float height, bool easeIn, bool easeOut)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, Color color, float height, bool persistCamera, bool easeIn, bool easeOut)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
@@ -87,6 +91,7 @@ public sealed class FogEffect : IVisualEffectDefinition
 			_endBeat = endBeat;
 			_color = new Color(Mathf.Clamp01(color.r), Mathf.Clamp01(color.g), Mathf.Clamp01(color.b), Mathf.Clamp01(color.a));
 			_height = Mathf.Clamp01(height);
+			_persistCamera = persistCamera;
 			_easeIn = easeIn;
 			_easeOut = easeOut;
 			InitializeOverlay();
@@ -116,6 +121,9 @@ public sealed class FogEffect : IVisualEffectDefinition
 					return;
 			}
 
+			if (_persistCamera)
+				RebindOverlayIfNeeded();
+
 			var currentBeat = _jukebox.CurrentBeat;
 			if (currentBeat >= _endBeat)
 			{
@@ -143,6 +151,7 @@ public sealed class FogEffect : IVisualEffectDefinition
 				return;
 
 			_overlay = camera.gameObject.AddComponent<FogOverlay>();
+			_camera = camera;
 			_overlay.SetParams(_color, _height);
 			_initialized = true;
 		}
@@ -155,6 +164,19 @@ public sealed class FogEffect : IVisualEffectDefinition
 			}
 
 			_overlay = null;
+			_camera = null;
+		}
+
+		private void RebindOverlayIfNeeded()
+		{
+			Camera? camera = EffectRuntimeController.ResolveEffectCamera(_loader);
+			if (camera is null || _camera == camera)
+				return;
+
+			RemoveOverlay();
+			_overlay = camera.gameObject.AddComponent<FogOverlay>();
+			_camera = camera;
+			_overlay.SetParams(_color, _height);
 		}
 	}
 

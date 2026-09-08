@@ -30,7 +30,10 @@ public sealed class VerticalFlipEffect : IVisualEffectDefinition
 			dataModel = $"{pluginGuid}/{Id}",
 			length = 2.0f,
 			resizable = true,
-			properties = new Dictionary<string, object>()
+			properties = new Dictionary<string, object>
+			{
+				["persist_camera"] = false
+			}
 		};
 	}
 
@@ -41,6 +44,7 @@ public sealed class VerticalFlipEffect : IVisualEffectDefinition
 		var durationBeats = Mathf.Max(0.01f, entity.length);
 		var startBeat = entity.beat;
 		var endBeat = startBeat + durationBeats;
+		var persist = entity.GetBool("persist_camera", false);
 
 		loader.scheduler.Schedule(startBeat, (System.Action?)SpawnAction);
 		log.Debug($"Scheduled '{DisplayName}' from beat {startBeat:0.###} to {endBeat:0.###}.");
@@ -49,7 +53,7 @@ public sealed class VerticalFlipEffect : IVisualEffectDefinition
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<VerticalFlipRunner>(runner =>
-				runner.Initialize(loader, loader.jukebox, endBeat));
+				runner.Initialize(loader, loader.jukebox, endBeat, persist));
 		}
 	}
 
@@ -60,15 +64,17 @@ public sealed class VerticalFlipEffect : IVisualEffectDefinition
 		private MixtapeLoaderCustom? _loader;
 		private JukeboxScript? _jukebox;
 		private Camera? _camera;
+		private bool _persistCamera;
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float endBeat)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float endBeat, bool persistCamera)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
 			_endBeat = endBeat;
+			_persistCamera = persistCamera;
 			InitializeFlip();
 		}
 
@@ -95,6 +101,9 @@ public sealed class VerticalFlipEffect : IVisualEffectDefinition
 				if (!_initialized)
 					return;
 			}
+
+			if (_persistCamera)
+				RebindCameraIfNeeded();
 
 			var currentBeat = _jukebox.CurrentBeat;
 			if (currentBeat >= _endBeat)
@@ -128,6 +137,16 @@ public sealed class VerticalFlipEffect : IVisualEffectDefinition
 			CameraFlipService.RemoveVerticalFlip(_camera);
 			_camera = null;
 		}
+
+		private void RebindCameraIfNeeded()
+		{
+			Camera? camera = EffectRuntimeController.ResolveEffectCamera(_loader);
+			if (camera is null || _camera == camera)
+				return;
+
+			RemoveFlip();
+			_camera = camera;
+			CameraFlipService.AddVerticalFlip(camera);
+		}
 	}
 }
-

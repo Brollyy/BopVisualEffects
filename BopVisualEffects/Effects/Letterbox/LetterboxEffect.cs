@@ -33,6 +33,7 @@ public sealed class LetterboxEffect : IVisualEffectDefinition
 			properties = new Dictionary<string, object>
 			{
 				["size"] = 0.1f,
+				["persist_camera"] = false,
 				["ease_in"] = true,
 				["ease_out"] = true
 			}
@@ -45,6 +46,7 @@ public sealed class LetterboxEffect : IVisualEffectDefinition
 		var log = ClassLogger.GetForClass<LetterboxEffect>();
 		var durationBeats = Mathf.Max(0.01f, entity.length);
 		var size = entity.GetFloat("size");
+		var persist = entity.GetBool("persist_camera", false);
 		var easeIn = entity.GetBool("ease_in", true);
 		var easeOut = entity.GetBool("ease_out", true);
 		var startBeat = entity.beat;
@@ -57,7 +59,7 @@ public sealed class LetterboxEffect : IVisualEffectDefinition
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<LetterboxRunner>(runner =>
-				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, size, easeIn, easeOut));
+				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, size, persist, easeIn, easeOut));
 		}
 	}
 
@@ -70,19 +72,22 @@ public sealed class LetterboxEffect : IVisualEffectDefinition
 		private MixtapeLoaderCustom? _loader;
 		private JukeboxScript? _jukebox;
 		private LetterboxOverlay? _overlay;
+		private Camera? _camera;
+		private bool _persistCamera;
 		private bool _easeIn;
 		private bool _easeOut;
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float size, bool easeIn, bool easeOut)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float size, bool persistCamera, bool easeIn, bool easeOut)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
 			_startBeat = startBeat;
 			_endBeat = endBeat;
 			_size = Mathf.Clamp(size, 0f, 0.49f);
+			_persistCamera = persistCamera;
 			_easeIn = easeIn;
 			_easeOut = easeOut;
 			InitializeOverlay();
@@ -112,6 +117,9 @@ public sealed class LetterboxEffect : IVisualEffectDefinition
 					return;
 			}
 
+			if (_persistCamera)
+				RebindOverlayIfNeeded();
+
 			var currentBeat = _jukebox.CurrentBeat;
 			if (currentBeat >= _endBeat)
 			{
@@ -139,6 +147,7 @@ public sealed class LetterboxEffect : IVisualEffectDefinition
 				return;
 
 			_overlay = camera.gameObject.AddComponent<LetterboxOverlay>();
+			_camera = camera;
 			_overlay.SetParams(_size);
 			_initialized = true;
 		}
@@ -151,6 +160,19 @@ public sealed class LetterboxEffect : IVisualEffectDefinition
 			}
 
 			_overlay = null;
+			_camera = null;
+		}
+
+		private void RebindOverlayIfNeeded()
+		{
+			Camera? camera = EffectRuntimeController.ResolveEffectCamera(_loader);
+			if (camera is null || _camera == camera)
+				return;
+
+			RemoveOverlay();
+			_overlay = camera.gameObject.AddComponent<LetterboxOverlay>();
+			_camera = camera;
+			_overlay.SetParams(_size);
 		}
 	}
 

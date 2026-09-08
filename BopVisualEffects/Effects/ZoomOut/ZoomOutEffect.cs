@@ -33,6 +33,7 @@ public sealed class ZoomOutEffect : IVisualEffectDefinition
 			properties = new Dictionary<string, object>
 			{
 				["intensity"] = 0.2f,
+				["persist_camera"] = false,
 				["ease_in"] = true,
 				["ease_out"] = true
 			}
@@ -45,6 +46,7 @@ public sealed class ZoomOutEffect : IVisualEffectDefinition
 		var log = ClassLogger.GetForClass<ZoomOutEffect>();
 		var durationBeats = Mathf.Max(0.01f, entity.length);
 		var intensity = entity.GetFloat("intensity");
+		var persist = entity.GetBool("persist_camera", false);
 		var easeIn = entity.GetBool("ease_in", true);
 		var easeOut = entity.GetBool("ease_out", true);
 		var startBeat = entity.beat;
@@ -57,7 +59,7 @@ public sealed class ZoomOutEffect : IVisualEffectDefinition
 		void SpawnAction()
 		{
 			EffectRuntimeController.Instance.SpawnRunner<ZoomOutRunner>(runner =>
-				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, intensity, easeIn, easeOut));
+				runner.Initialize(loader, loader.jukebox, startBeat, endBeat, intensity, persist, easeIn, easeOut));
 		}
 	}
 
@@ -70,19 +72,21 @@ public sealed class ZoomOutEffect : IVisualEffectDefinition
 		private MixtapeLoaderCustom? _loader;
 		private JukeboxScript? _jukebox;
 		private Camera? _camera;
+		private bool _persistCamera;
 		private bool _easeIn;
 		private bool _easeOut;
 
 		/// <summary>
 		/// Initializes this runner with effect parameters.
 		/// </summary>
-		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float intensity, bool easeIn, bool easeOut)
+		public void Initialize(MixtapeLoaderCustom loader, JukeboxScript? jukebox, float startBeat, float endBeat, float intensity, bool persistCamera, bool easeIn, bool easeOut)
 		{
 			_loader = loader;
 			_jukebox = jukebox;
 			_startBeat = startBeat;
 			_endBeat = endBeat;
 			_intensity = Mathf.Max(0f, intensity);
+			_persistCamera = persistCamera;
 			_easeIn = easeIn;
 			_easeOut = easeOut;
 			InitializeTargetCamera();
@@ -113,6 +117,9 @@ public sealed class ZoomOutEffect : IVisualEffectDefinition
 					return;
 			}
 
+			if (_persistCamera)
+				RebindCameraIfNeeded();
+
 			var currentBeat = _jukebox.CurrentBeat;
 			if (currentBeat >= _endBeat)
 			{
@@ -123,6 +130,7 @@ public sealed class ZoomOutEffect : IVisualEffectDefinition
 			// Ease out over first 20%, hold zoomed out from 20-80%, ease back in over last 20%.
 			var progress = Mathf.InverseLerp(_startBeat, _endBeat, currentBeat);
 			var envelope = EffectEnvelope.Evaluate(progress, _easeIn, _easeOut);
+
 
 			// Zoom out: zoomFactor > 1 means larger camera size = more zoomed out.
 			var zoomFactor = 1f + _intensity * envelope;
@@ -143,6 +151,18 @@ public sealed class ZoomOutEffect : IVisualEffectDefinition
 
 			_camera = camera;
 			_initialized = true;
+		}
+
+		private void RebindCameraIfNeeded()
+		{
+			Camera? camera = EffectRuntimeController.ResolveEffectCamera(_loader);
+			if (camera is null || _camera == camera)
+				return;
+
+			if (_camera is not null)
+				CameraZoomService.RemoveFactor(_camera, this);
+
+			_camera = camera;
 		}
 	}
 }
