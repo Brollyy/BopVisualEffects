@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using BepInEx.Configuration;
+using BopVisualEffects.Effects.Bubble;
 using BopVisualEffects.Effects.CameraShake;
 using BopVisualEffects.Effects.CameraTilt;
 using BopVisualEffects.Effects.ColorTint;
@@ -55,6 +56,7 @@ public sealed class EffectDefinitionRegistry
 	public static void Initialize(string pluginGuid, ClassLogger log, ConfigFile config)
 	{
 		var registry = new EffectDefinitionRegistry(pluginGuid, log, config);
+		registry.Register(new BubbleEffect());
 		registry.Register(new CameraShakeEffect());
 		registry.Register(new CameraTiltEffect());
 		registry.Register(new ColorTintEffect());
